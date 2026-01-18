@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Default Bar</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+      background: rgba(30, 30, 46, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      color: #cdd6f4;
+      height: 100vh;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+
+    .bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 100%;
+      padding: 0 12px;
+    }
+
+    .section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .widget {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .widget.active {
+      background: rgba(137, 180, 250, 0.2);
+      color: #89b4fa;
+    }
+
+    .clock {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .workspace {
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .workspace:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .system-info {
+      display: flex;
+      gap: 8px;
+      font-size: 11px;
+      opacity: 0.8;
+    }
+
+    .system-info span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <div class="section left">
+      <div id="workspaces" class="section"></div>
+    </div>
+
+    <div class="section center">
+      <div id="app-title" class="widget"></div>
+    </div>
+
+    <div class="section right">
+      <div class="system-info">
+        <span id="cpu"></span>
+        <span id="memory"></span>
+        <span id="battery"></span>
+      </div>
+      <div id="clock" class="widget clock"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    const { invoke } = window.__TAURI__.core;
+    const { listen } = window.__TAURI__.event;
+
+    // Update clock
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${hours}:${minutes}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Update workspaces
+    async function updateWorkspaces() {
+      try {
+        const workspaces = await invoke('aerospace_get_workspaces');
+        const container = document.getElementById('workspaces');
+        container.innerHTML = workspaces.map(ws => `
+          <div class="widget workspace ${ws.focused ? 'active' : ''}"
+               onclick="focusWorkspace('${ws.id}')">
+            ${ws.displayName || ws.id}
+          </div>
+        `).join('');
+      } catch (e) {
+        console.warn('Aerospace not available:', e);
+      }
+    }
+
+    window.focusWorkspace = async (id) => {
+      await invoke('aerospace_focus_workspace', { workspace: id });
+    };
+
+    // Update system info
+    async function updateSystemInfo() {
+      try {
+        const [cpu, memory, battery] = await Promise.all([
+          invoke('get_cpu_info'),
+          invoke('get_memory_info'),
+          invoke('get_battery_info'),
+        ]);
+
+        document.getElementById('cpu').textContent = `CPU ${Math.round(cpu.usage)}%`;
+        document.getElementById('memory').textContent = `RAM ${Math.round(memory.usage)}%`;
+        document.getElementById('battery').textContent = battery
+          ? `${battery.charging ? '⚡' : '🔋'} ${Math.round(battery.percent)}%`
+          : '';
+      } catch (e) {
+        console.warn('System info not available:', e);
+      }
+    }
+
+    // Update focused app
+    async function updateFocusedApp() {
+      try {
+        const ws = await invoke('aerospace_get_workspaces');
+        const focused = ws.find(w => w.focused);
+        const focusedWindow = focused?.windows.find(w => w.focused);
+        document.getElementById('app-title').textContent = focusedWindow?.app || '';
+      } catch (e) {
+        document.getElementById('app-title').textContent = '';
+      }
+    }
+
+    // Listen for workspace changes
+    listen('workspace-changed', () => {
+      updateWorkspaces();
+      updateFocusedApp();
+    });
+
+    // Initial load
+    updateWorkspaces();
+    updateFocusedApp();
+    updateSystemInfo();
+
+    // Periodic updates
+    setInterval(updateSystemInfo, 5000);
+    setInterval(updateWorkspaces, 2000);
+  </script>
+</body>
+</html>

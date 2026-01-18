@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/* Tailwind v4 Theme Extension */
+@theme {
+  /* Base dark palette */
+  --color-void: #0a0a0f;
+  --color-abyss: #0f0f18;
+  --color-deep: #151520;
+  --color-surface: #1a1a28;
+  --color-elevated: #222235;
+
+  /* Text hierarchy */
+  --color-text-primary: #f0f0f8;
+  --color-text-secondary: rgba(240, 240, 248, 0.7);
+  --color-text-tertiary: rgba(240, 240, 248, 0.45);
+  --color-text-ghost: rgba(240, 240, 248, 0.25);
+
+  /* Holographic spectrum */
+  --color-holo-pink: #ff6fd8;
+  --color-holo-purple: #c678ff;
+  --color-holo-blue: #6eb4ff;
+  --color-holo-cyan: #5eead4;
+  --color-holo-green: #86efac;
+  --color-holo-yellow: #fde68a;
+  --color-holo-orange: #fdba74;
+
+  /* State colors */
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+  --color-success: #5eead4;
+
+  /* Glass properties */
+  --color-glass-bg: rgba(15, 15, 24, 0.65);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --color-glass-highlight: rgba(255, 255, 255, 0.12);
+  --color-glass-glow: rgba(110, 180, 255, 0.15);
+
+  /* Widget glass */
+  --color-widget-glass: rgba(34, 34, 53, 0.5);
+  --color-widget-glass-hover: rgba(34, 34, 53, 0.7);
+  --color-widget-border: rgba(255, 255, 255, 0.06);
+  --color-widget-border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Accent */
+  --color-accent: #5eead4;
+  --color-accent-glow: rgba(94, 234, 212, 0.4);
+
+  /* Font families */
+  --font-sf: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-nerd: 'Symbols Nerd Font', monospace;
+  --font-sf-symbols: 'SF Pro', system-ui;
+}
+
+/* CSS Variables - aliases for component compatibility */
+:root {
+  /* Text colors */
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-tertiary: var(--color-text-tertiary);
+  --text-ghost: var(--color-text-ghost);
+
+  /* Holographic colors */
+  --holo-pink: var(--color-holo-pink);
+  --holo-purple: var(--color-holo-purple);
+  --holo-blue: var(--color-holo-blue);
+  --holo-cyan: var(--color-holo-cyan);
+  --holo-green: var(--color-holo-green);
+  --holo-yellow: var(--color-holo-yellow);
+  --holo-orange: var(--color-holo-orange);
+
+  /* State colors */
+  --warning: var(--color-warning);
+  --danger: var(--color-danger);
+  --success: var(--color-success);
+
+  /* Glass */
+  --glass-bg: var(--color-glass-bg);
+  --glass-border: var(--color-glass-border);
+  --widget-glass: var(--color-widget-glass);
+  --widget-glass-hover: var(--color-widget-glass-hover);
+  --widget-border: var(--color-widget-border);
+  --widget-border-hover: var(--color-widget-border-hover);
+
+  /* Accent */
+  --accent: var(--color-accent);
+  --accent-glow: var(--color-accent-glow);
+
+  /* Holographic gradient */
+  --holo-gradient: linear-gradient(
+    135deg,
+    var(--holo-pink) 0%,
+    var(--holo-purple) 20%,
+    var(--holo-blue) 40%,
+    var(--holo-cyan) 60%,
+    var(--holo-green) 80%,
+    var(--holo-yellow) 100%
+  );
+}
+
+/* Keyframe animations */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes holo-shimmer {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Base body styles */
+body {
+  font-family: var(--font-sf);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Utility layers */
+@layer utilities {
+  /* Icon utilities */
+  .icon-nf {
+    font-family: var(--font-nerd);
+    @apply text-sm leading-none;
+  }
+
+  .icon-sf {
+    font-family: var(--font-sf-symbols);
+    @apply text-[15px] leading-none;
+  }
+
+  /* Glass morphism */
+  .glass {
+    @apply bg-glass-bg backdrop-blur-[24px] backdrop-saturate-[180%];
+  }
+
+  .glass-widget {
+    @apply bg-widget-glass backdrop-blur-[12px] backdrop-saturate-150
+           border border-widget-border
+           transition-all duration-200 ease-out;
+  }
+
+  .glass-widget:hover {
+    @apply bg-widget-glass-hover border-widget-border-hover;
+  }
+
+  /* Holographic text effect */
+  .holo-text {
+    background: var(--holo-gradient);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: holo-shimmer 3s ease-in-out infinite;
+  }
+}

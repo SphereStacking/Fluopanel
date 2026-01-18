@@ -1,0 +1,22 @@
+{
+  "id": "default-bar",
+  "name": "Default Bar",
+  "version": "0.1.0",
+  "type": "bar",
+  "position": {
+    "monitor": "primary",
+    "top": 8,
+    "left": 8,
+    "right": 8,
+    "height": 32
+  },
+  "window": {
+    "transparent": true,
+    "alwaysOnTop": true,
+    "resizable": false,
+    "decorations": false,
+    "skipTaskbar": true
+  },
+  "entry": "index.html",
+  "devUrl": "http://localhost:5173"
+}

@@ -1,0 +1,35 @@
+{
+  "name": "arcana",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Customizable widget framework for macOS",
+  "workspaces": [
+    "packages/core",
+    "packages/providers",
+    "packages/vue",
+    "packages/tauri",
+    "packages/starters/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n libs,tauri,vue -c blue,yellow,green \"npm run dev:libs\" \"npm run dev:tauri\" \"npm run dev:vue\"",
+    "dev:tauri": "npm run tauri:dev -w @arcana/tauri",
+    "dev:vue": "npm run dev -w @arcana/starter-vue",
+    "dev:libs": "concurrently -n core,providers \"npm run dev:core\" \"npm run dev:providers\"",
+    "dev:core": "npm run dev -w @arcana/core",
+    "dev:providers": "npm run dev -w @arcana/providers",
+
+    "build": "npm run build:vue && npm run build:tauri",
+    "build:tauri": "npm run tauri:build -w @arcana/tauri",
+    "build:vue": "npm run build -w @arcana/starter-vue",
+
+    "build:libs": "npm run build -w @arcana/core && npm run build -w @arcana/providers",
+
+    "tauri": "npm run tauri -w @arcana/tauri"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

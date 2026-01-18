@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --version:*)",
+      "Bash(cargo --version:*)",
+      "Bash(aerospace:*)",
+      "Bash(bun:*)",
+      "Bash(rustup default:*)",
+      "Bash(cargo install:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run tauri:*)",
+      "Bash(cargo tauri icon:*)",
+      "Bash(python3:*)",
+      "Bash(pgrep:*)",
+      "Bash(pkill:*)",
+      "Bash(open:*)",
+      "Bash(cat:*)",
+      "Bash(/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister:*)",
+      "Bash(defaults read:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(npm run starter:vue:build:*)",
+      "Bash(echo:*)",
+      "Bash(test:*)",
+      "Bash(/bin/ls:*)",
+      "Bash(/bin/cat ~/.config/arcana-bar/dist/index.html)",
+      "Bash(cargo build:*)"
+    ]
+  }
+}
