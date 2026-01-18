@@ -136,19 +136,6 @@ export interface WidgetRegistration {
 // Popup Types
 // ============================================
 
-/** Popup mode determines open/close triggers */
-export type PopupMode = 'toggle' | 'hover' | 'hover-sticky'
-
-/** Popup behavior configuration based on mode */
-export interface PopupBehavior {
-  /** How the popup opens */
-  openOn: 'click' | 'mouseenter'
-  /** How the popup closes */
-  closeOn: 'blur' | 'mouseleave'
-  /** Delay before closing when trigger loses hover (ms) */
-  leaveDelay: number
-}
-
 /** Popup alignment relative to anchor element */
 export type PopupAlign = 'start' | 'center' | 'end'
 
@@ -174,8 +161,6 @@ export interface PopupOpenOptions {
   align?: PopupAlign
   /** Vertical offset from anchor (default: 8) */
   offsetY?: number
-  /** Popup mode (default: 'toggle') */
-  mode?: PopupMode
 }
 
 /** Popup info returned after creation */
@@ -184,12 +169,10 @@ export interface PopupInfo {
   label: string
 }
 
-/** Popup context for determining current mode */
+/** Popup context for determining current window type */
 export interface PopupContext {
   /** Popup ID (from URL parameter) */
   id: string | null
   /** Whether current window is a popup */
   isPopup: boolean
-  /** Popup mode (from URL parameter) */
-  mode: PopupMode
 }

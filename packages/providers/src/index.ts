@@ -11,6 +11,7 @@ export * from './activeApp'
 export * from './disk'
 export * from './brightness'
 export * from './bluetooth'
+export * from './youtubeMusic'
 
 import { createAerospaceProvider } from './aerospace'
 import { createBatteryProvider } from './battery'
@@ -24,6 +25,7 @@ import { createActiveAppProvider } from './activeApp'
 import { createDiskProvider } from './disk'
 import { createBrightnessProvider } from './brightness'
 import { createBluetoothProvider } from './bluetooth'
+import { createYouTubeMusicProvider } from './youtubeMusic'
 
 export function createProviders() {
   return {
@@ -39,5 +41,6 @@ export function createProviders() {
     disk: createDiskProvider(),
     brightness: createBrightnessProvider(),
     bluetooth: createBluetoothProvider(),
+    youtubeMusic: createYouTubeMusicProvider(),
   }
 }

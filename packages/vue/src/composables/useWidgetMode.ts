@@ -47,8 +47,6 @@ export function useCoordinator(options?: { autoHide?: boolean }) {
 
   onMounted(async () => {
     if (isCoordinator.value && autoHide) {
-      // Small delay to ensure all Widget windows are created
-      await new Promise((resolve) => setTimeout(resolve, 100))
       await hideCoordinator()
     }
   })

@@ -31,8 +31,18 @@ clap = { version = "4", features = ["derive"] }
 reqwest = { version = "0.12", features = ["json"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-objc = "0.2"
-cocoa = "0.26"
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSString", "NSNotification", "NSArray", "NSData", "NSObject", "NSDictionary"] }
+objc2-app-kit = { version = "0.3", features = [
+    "NSApplication",
+    "NSRunningApplication",
+    "NSWorkspace",
+    "NSWindow",
+    "NSEvent",
+    "NSImage",
+    "NSBitmapImageRep",
+    "NSGraphics"
+] }
 coreaudio-sys = "0.2"
 core-foundation-sys = "0.8"
 

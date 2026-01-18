@@ -1,17 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import type { AerospaceProvider, Workspace, FocusChangeEvent } from '@arcana/providers'
-
-const props = defineProps<{
-  provider: AerospaceProvider
-}>()
+import { computed } from 'vue'
+import type { Workspace } from '@arcana/providers'
+import { useAerospaceProvider } from '@arcana/vue'
 
 const MAX_ICONS = 3
 
-const workspaces = ref<Workspace[]>([])
-const appIcons = ref<Map<string, string | null>>(new Map())
-let unsubscribeFocus: (() => void) | null = null
-let unsubscribeWorkspace: (() => void) | null = null
+const { workspaces, focusWorkspace, getAppIcon } = useAerospaceProvider()
 
 // Show workspaces 1-9, merge data with empty slots
 const displayWorkspaces = computed((): Workspace[] => {
@@ -34,83 +28,9 @@ const displayWorkspaces = computed((): Workspace[] => {
   return slots
 })
 
-const refresh = async () => {
-  try {
-    const result = await props.provider.getWorkspaces()
-    workspaces.value = result
-
-    const appNames = new Set<string>()
-    result.forEach(ws => ws.windows.forEach(w => appNames.add(w.app)))
-
-    if (appNames.size > 0) {
-      const icons = await props.provider.getAppIcons([...appNames])
-      icons.forEach(icon => {
-        appIcons.value.set(icon.app, icon.icon)
-      })
-    }
-  } catch (error) {
-    console.error('Failed to refresh workspaces:', error)
-  }
-}
-
-const getAppIcon = (appName: string): string | null => {
-  return appIcons.value.get(appName) ?? null
-}
-
-onMounted(async () => {
-  // Initial load
-  await refresh()
-
-  // Subscribe to focus change events (optimized: only 2 workspaces updated)
-  unsubscribeFocus = props.provider.onFocusChange(async ({ focused, prev }: FocusChangeEvent) => {
-    // Update only the changed workspaces in cache
-    workspaces.value = workspaces.value.map((ws) => {
-      if (focused && ws.id === focused.id) return focused
-      if (prev && ws.id === prev.id) return { ...prev, focused: false }
-      return { ...ws, focused: false }
-    })
-
-    // Fetch icons for any new apps
-    const newApps = new Set<string>()
-    if (focused) focused.windows.forEach((w) => newApps.add(w.app))
-    if (prev) prev.windows.forEach((w) => newApps.add(w.app))
-
-    const uncached = [...newApps].filter((app) => !appIcons.value.has(app))
-    if (uncached.length > 0) {
-      const icons = await props.provider.getAppIcons(uncached)
-      icons.forEach((icon) => {
-        appIcons.value.set(icon.app, icon.icon)
-      })
-    }
-  })
-
-  // Subscribe to full workspace change events (for window moves)
-  unsubscribeWorkspace = props.provider.onWorkspaceChange(async (ws) => {
-    workspaces.value = ws
-
-    // Update icons for any new apps
-    const appNames = new Set<string>()
-    ws.forEach((w) => w.windows.forEach((win) => appNames.add(win.app)))
-
-    const uncached = [...appNames].filter((app) => !appIcons.value.has(app))
-    if (uncached.length > 0) {
-      const icons = await props.provider.getAppIcons(uncached)
-      icons.forEach((icon) => {
-        appIcons.value.set(icon.app, icon.icon)
-      })
-    }
-  })
-})
-
-onUnmounted(() => {
-  unsubscribeFocus?.()
-  unsubscribeWorkspace?.()
-})
-
 const handleClick = async (id: string) => {
   try {
-    await props.provider.focusWorkspace(id)
-    await refresh()
+    await focusWorkspace(id)
   } catch (error) {
     console.error('Failed to focus workspace:', error)
   }

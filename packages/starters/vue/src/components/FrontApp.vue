@@ -1,16 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import type { ActiveAppProvider, ActiveAppInfo } from '@arcana/providers'
+import { ref, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { useActiveAppProvider } from '@arcana/vue'
 
-const props = defineProps<{
-  provider: ActiveAppProvider
-}>()
-
-const activeApp = ref<ActiveAppInfo | null>(null)
+const { data: activeApp } = useActiveAppProvider()
 const appIcon = ref<string | null>(null)
-let unsubscribe: (() => void) | null = null
-let intervalId: ReturnType<typeof setInterval> | null = null
 
 const fetchIcon = async (appName: string) => {
   try {
@@ -22,39 +16,12 @@ const fetchIcon = async (appName: string) => {
   }
 }
 
-const refresh = async () => {
-  try {
-    const app = await props.provider.getActiveApp()
-    if (app.name !== activeApp.value?.name) {
-      activeApp.value = app
-      if (app.name) {
-        await fetchIcon(app.name)
-      }
-    }
-  } catch (error) {
-    console.error('Failed to refresh active app:', error)
+// Watch for app changes and fetch icon
+watch(activeApp, (newApp, oldApp) => {
+  if (newApp && newApp.name !== oldApp?.name) {
+    fetchIcon(newApp.name)
   }
-}
-
-onMounted(async () => {
-  await refresh()
-
-  unsubscribe = props.provider.onActiveAppChange(async (app) => {
-    if (app.name !== activeApp.value?.name) {
-      activeApp.value = app
-      if (app.name) {
-        await fetchIcon(app.name)
-      }
-    }
-  })
-
-  intervalId = setInterval(refresh, 500)
-})
-
-onUnmounted(() => {
-  unsubscribe?.()
-  if (intervalId) clearInterval(intervalId)
-})
+}, { immediate: true })
 </script>
 
 <template>

@@ -336,64 +336,35 @@ pub fn toggle_mute() -> Result<(), String> {
 pub fn get_active_app_info() -> Result<ActiveAppInfo, String> {
     #[cfg(target_os = "macos")]
     {
-        use cocoa::base::{id, nil};
-        use cocoa::foundation::NSAutoreleasePool;
-        use objc::{class, msg_send, sel, sel_impl};
-        use std::ffi::CStr;
+        use objc2_app_kit::NSWorkspace;
 
-        unsafe {
-            let _pool = NSAutoreleasePool::new(nil);
+        let workspace = NSWorkspace::sharedWorkspace();
+        let front_app = workspace.frontmostApplication();
 
-            // Get NSWorkspace shared instance
-            let workspace: id = msg_send![class!(NSWorkspace), sharedWorkspace];
+        match front_app {
+            Some(app) => {
+                let name = app
+                    .localizedName()
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| "Unknown".to_string());
 
-            // Get frontmost application
-            let front_app: id = msg_send![workspace, frontmostApplication];
+                let bundle_id = app.bundleIdentifier().map(|s| s.to_string());
 
-            if front_app == nil {
-                return Ok(ActiveAppInfo {
-                    name: "Unknown".to_string(),
-                    bundle_id: None,
-                    icon: None,
-                    pid: None,
-                });
+                let pid = app.processIdentifier();
+
+                Ok(ActiveAppInfo {
+                    name,
+                    bundle_id,
+                    icon: None, // Icon can be fetched separately using get_app_icon
+                    pid: Some(pid),
+                })
             }
-
-            // Get localized name
-            let name_ns: id = msg_send![front_app, localizedName];
-            let name = if name_ns != nil {
-                let name_ptr: *const i8 = msg_send![name_ns, UTF8String];
-                if !name_ptr.is_null() {
-                    CStr::from_ptr(name_ptr).to_string_lossy().into_owned()
-                } else {
-                    "Unknown".to_string()
-                }
-            } else {
-                "Unknown".to_string()
-            };
-
-            // Get bundle identifier
-            let bundle_ns: id = msg_send![front_app, bundleIdentifier];
-            let bundle_id = if bundle_ns != nil {
-                let bundle_ptr: *const i8 = msg_send![bundle_ns, UTF8String];
-                if !bundle_ptr.is_null() {
-                    Some(CStr::from_ptr(bundle_ptr).to_string_lossy().into_owned())
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
-
-            // Get process identifier
-            let pid: i32 = msg_send![front_app, processIdentifier];
-
-            Ok(ActiveAppInfo {
-                name,
-                bundle_id,
-                icon: None, // Icon can be fetched separately using get_app_icon
-                pid: Some(pid),
-            })
+            None => Ok(ActiveAppInfo {
+                name: "Unknown".to_string(),
+                bundle_id: None,
+                icon: None,
+                pid: None,
+            }),
         }
     }
 

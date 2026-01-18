@@ -1,24 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import type { DateProvider, DateInfo } from '@arcana/providers'
+import { computed } from 'vue'
+import { useDateProvider } from '@arcana/vue'
 
-const props = defineProps<{
-  provider: DateProvider
-}>()
-
-const date = ref<DateInfo>({ timestamp: 0, formatted: '' })
-let unsubscribe: (() => void) | null = null
-
-onMounted(() => {
-  date.value = props.provider.getDate('HH:mm')
-  unsubscribe = props.provider.startPolling((info) => {
-    date.value = info
-  }, 1000)
-})
-
-onUnmounted(() => {
-  unsubscribe?.()
-})
+const { data: date } = useDateProvider('HH:mm', 60000)
 
 // Split time for styling
 const timeParts = computed(() => {

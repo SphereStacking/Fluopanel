@@ -1,31 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import type { MediaProvider, MediaInfo } from '@arcana/providers'
+import { useMediaProvider } from '@arcana/vue'
 
-const props = defineProps<{
-  provider: MediaProvider
-}>()
-
-const media = ref<MediaInfo | null>(null)
-let intervalId: ReturnType<typeof setInterval> | null = null
-
-const refresh = async () => {
-  try {
-    media.value = await props.provider.getMedia()
-  } catch (error) {
-    console.error('Failed to get media info:', error)
-  }
-}
-
-onMounted(() => {
-  refresh()
-  intervalId = setInterval(refresh, 1000)
-})
-
-onUnmounted(() => {
-  if (intervalId) clearInterval(intervalId)
-})
+const { data: media, play, pause, next, previous } = useMediaProvider()
 
 const icon = computed(() => {
   if (!media.value) return 'mdi:music-note'
@@ -43,29 +21,26 @@ const togglePlay = async () => {
   if (!media.value) return
   try {
     if (media.value.playing) {
-      await props.provider.pause()
+      await pause()
     } else {
-      await props.provider.play()
+      await play()
     }
-    await refresh()
   } catch (error) {
     console.error('Failed to toggle play:', error)
   }
 }
 
-const next = async () => {
+const handleNext = async () => {
   try {
-    await props.provider.next()
-    await refresh()
+    await next()
   } catch (error) {
     console.error('Failed to skip:', error)
   }
 }
 
-const prev = async () => {
+const handlePrev = async () => {
   try {
-    await props.provider.previous()
-    await refresh()
+    await previous()
   } catch (error) {
     console.error('Failed to go back:', error)
   }
@@ -83,7 +58,7 @@ const prev = async () => {
   >
     <!-- Previous button -->
     <button
-      @click="prev"
+      @click="handlePrev"
       class="
         text-[var(--text-tertiary)]
         hover:text-[var(--holo-pink)]
@@ -113,7 +88,7 @@ const prev = async () => {
 
     <!-- Next button -->
     <button
-      @click="next"
+      @click="handleNext"
       class="
         text-[var(--text-tertiary)]
         hover:text-[var(--holo-pink)]

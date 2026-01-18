@@ -1,33 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import type { BluetoothProvider, BluetoothInfo } from '@arcana/providers'
+import { useBluetoothProvider } from '@arcana/vue'
 
-const props = defineProps<{
-  provider: BluetoothProvider
-}>()
-
-const bluetooth = ref<BluetoothInfo | null>(null)
-let unsubscribe: (() => void) | null = null
-
-const refresh = async () => {
-  try {
-    bluetooth.value = await props.provider.getBluetooth()
-  } catch (error) {
-    console.error('Failed to get bluetooth info:', error)
-  }
-}
-
-onMounted(async () => {
-  await refresh()
-  unsubscribe = props.provider.onBluetoothChange((info) => {
-    bluetooth.value = info
-  })
-})
-
-onUnmounted(() => {
-  unsubscribe?.()
-})
+const { data: bluetooth, toggle } = useBluetoothProvider()
 
 const icon = computed(() => {
   if (!bluetooth.value) return 'mdi:bluetooth'
@@ -48,10 +24,9 @@ const statusColor = computed(() => {
   return 'text-[var(--text-secondary)]'
 })
 
-const toggle = async () => {
+const handleToggle = async () => {
   try {
-    await props.provider.toggle()
-    await refresh()
+    await toggle()
   } catch (error) {
     console.error('Failed to toggle bluetooth:', error)
   }
@@ -69,7 +44,7 @@ const toggle = async () => {
       cursor-pointer
       group
     "
-    @click="toggle"
+    @click="handleToggle"
   >
     <Icon
       :icon="icon"

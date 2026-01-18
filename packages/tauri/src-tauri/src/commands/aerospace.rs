@@ -41,6 +41,7 @@ struct AerospaceWindow {
 
 const AEROSPACE_PATH: &str = "/opt/homebrew/bin/aerospace";
 
+/// Sync version for internal use (CLI, IPC)
 fn run_aerospace_command(args: &[&str]) -> Result<String, String> {
     let output = Command::new(AEROSPACE_PATH)
         .args(args)
@@ -52,6 +53,26 @@ fn run_aerospace_command(args: &[&str]) -> Result<String, String> {
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+/// Async version that runs in a blocking thread pool to avoid UI freeze
+async fn run_aerospace_command_async(args: &[&str]) -> Result<String, String> {
+    let args: Vec<String> = args.iter().map(|s| s.to_string()).collect();
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let output = Command::new(AEROSPACE_PATH)
+            .args(&args)
+            .output()
+            .map_err(|e| format!("Failed to execute aerospace: {}", e))?;
+
+        if !output.status.success() {
+            return Err(String::from_utf8_lossy(&output.stderr).to_string());
+        }
+
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?
 }
 
 /// Internal sync function for CLI use
@@ -118,21 +139,23 @@ pub fn aerospace_get_workspaces_sync() -> Result<Vec<Workspace>, String> {
     Ok(workspaces)
 }
 
-/// Tauri command wrapper
+/// Tauri command wrapper - async to avoid UI freeze
 #[command]
-pub fn aerospace_get_workspaces() -> Result<Vec<Workspace>, String> {
-    aerospace_get_workspaces_sync()
+pub async fn aerospace_get_workspaces() -> Result<Vec<Workspace>, String> {
+    tauri::async_runtime::spawn_blocking(aerospace_get_workspaces_sync)
+        .await
+        .map_err(|e| format!("Task join error: {}", e))?
 }
 
 #[command]
-pub fn aerospace_get_focused_workspace() -> Result<Option<Workspace>, String> {
-    let workspaces = aerospace_get_workspaces()?;
+pub async fn aerospace_get_focused_workspace() -> Result<Option<Workspace>, String> {
+    let workspaces = aerospace_get_workspaces().await?;
     Ok(workspaces.into_iter().find(|w| w.focused))
 }
 
 #[command]
-pub fn aerospace_focus_workspace(id: String) -> Result<(), String> {
-    run_aerospace_command(&["workspace", &id])?;
+pub async fn aerospace_focus_workspace(id: String) -> Result<(), String> {
+    run_aerospace_command_async(&["workspace", &id]).await?;
     Ok(())
 }
 

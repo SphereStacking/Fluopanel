@@ -108,6 +108,11 @@
   50% { opacity: 1; }
 }
 
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 /* Base body styles */
 body {
   font-family: var(--font-sf);

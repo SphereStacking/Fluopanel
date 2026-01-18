@@ -4,8 +4,6 @@
 
 #![cfg(target_os = "macos")]
 
-use std::os::raw::c_void;
-
 // IOKit bindings for display brightness
 #[link(name = "IOKit", kind = "framework")]
 extern "C" {
@@ -93,10 +91,9 @@ fn get_brightness_fallback() -> Result<f32, String> {
     use std::process::Command;
 
     // Use osascript as fallback for external displays
-    let output = Command::new("osascript")
+    let _ = Command::new("osascript")
         .args(["-e", "tell application \"System Preferences\" to quit"])
-        .output()
-        .ok();
+        .output();
 
     // Try brightness from system_profiler
     let output = Command::new("system_profiler")
@@ -113,21 +110,7 @@ fn get_brightness_fallback() -> Result<f32, String> {
 }
 
 /// Fallback brightness setter
-fn set_brightness_fallback(brightness: f32) -> Result<(), String> {
-    use std::process::Command;
-
-    // Try using brightness CLI tool if available
-    let level = (brightness * 100.0) as i32;
-
-    // Use osascript with System Events
-    let script = format!(
-        r#"
-        tell application "System Preferences"
-            reveal anchor "displaysDisplayTab" of pane id "com.apple.preference.displays"
-        end tell
-        "#
-    );
-
-    // This is a best-effort fallback
+fn set_brightness_fallback(_brightness: f32) -> Result<(), String> {
+    // Native brightness control not available for external displays
     Err("Brightness control not available for external displays via native API".to_string())
 }

@@ -8,12 +8,11 @@ use commands::{
     clear_icon_cache, close_all_popups, close_popup_window, create_popup_window,
     get_active_app_info, get_app_icon, get_app_icons, get_battery_info, get_bluetooth_info,
     get_brightness_info, get_config, get_cpu_info, get_disk_info, get_media_info,
-    get_memory_info, get_monitors, get_network_info, get_open_popups, get_registered_triggers,
-    get_volume_info, media_next, media_pause, media_play, media_previous, popup_trigger_enter,
-    popup_trigger_leave, popup_window_enter, popup_window_leave, register_hover_trigger,
-    save_config, set_brightness, set_mute, set_volume, set_window_geometry, set_window_position,
-    set_window_size, store_delete, store_get, store_keys, store_set, toggle_bluetooth,
-    toggle_mute, unregister_hover_trigger, update_popup_position, update_trigger_bounds,
+    get_memory_info, get_monitors, get_network_info, get_open_popups, get_volume_info,
+    media_next, media_pause, media_play, media_previous, save_config, set_brightness,
+    set_mute, set_volume, set_window_geometry, set_window_position, set_window_size,
+    store_delete, store_get, store_keys, store_set, toggle_bluetooth, toggle_mute,
+    update_popup_position,
 };
 use widgets::{
     close_widget_window, create_inline_widget_window, create_widget_window,
@@ -24,7 +23,6 @@ use once_cell::sync::OnceCell;
 use std::path::PathBuf;
 use tauri::http::Response;
 use tauri::Emitter;
-use tauri::Manager;
 
 #[derive(Parser)]
 #[command(name = "arcana")]
@@ -140,16 +138,6 @@ pub fn run() {
             close_all_popups,
             get_open_popups,
             update_popup_position,
-            // Popup hover coordination commands
-            popup_trigger_enter,
-            popup_trigger_leave,
-            popup_window_enter,
-            popup_window_leave,
-            // Trigger registration commands
-            register_hover_trigger,
-            unregister_hover_trigger,
-            update_trigger_bounds,
-            get_registered_triggers,
             // Store commands
             store_set,
             store_get,
@@ -227,57 +215,61 @@ pub fn run() {
             // Hide from Dock (set as accessory app)
             #[cfg(target_os = "macos")]
             {
-                use cocoa::appkit::{NSApp, NSApplication, NSApplicationActivationPolicy};
-                unsafe {
-                    let app_instance = NSApp();
-                    app_instance.setActivationPolicy_(NSApplicationActivationPolicy::NSApplicationActivationPolicyAccessory);
-                }
+                use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy};
+                use objc2_foundation::MainThreadMarker;
+
+                let mtm = MainThreadMarker::new().expect("must be on main thread");
+                let app_instance = NSApplication::sharedApplication(mtm);
+                app_instance.setActivationPolicy(NSApplicationActivationPolicy::Accessory);
             }
 
             // Register display change observer (macOS)
             #[cfg(target_os = "macos")]
             {
-                use cocoa::base::{id, nil};
-                use cocoa::foundation::NSString;
-                use objc::runtime::{Object, Sel};
-                use objc::{class, declare::ClassDecl, msg_send, sel, sel_impl};
+                use objc2::rc::Retained;
+                use objc2::{define_class, msg_send, sel, AllocAnyThread};
+                use objc2_foundation::{
+                    NSNotification, NSNotificationCenter, NSObject, NSString,
+                };
                 use std::sync::Once;
 
-                static REGISTER_OBSERVER: Once = Once::new();
+                define_class!(
+                    #[unsafe(super(NSObject))]
+                    #[name = "ScreenChangeObserver"]
+                    #[ivars = ()]
+                    struct ScreenChangeObserver;
 
-                REGISTER_OBSERVER.call_once(|| {
-                    unsafe {
-                        // Create observer class dynamically
-                        let superclass = class!(NSObject);
-                        let mut decl = ClassDecl::new("ScreenChangeObserver", superclass).unwrap();
-
-                        extern "C" fn handle_screen_change(
-                            _this: &Object,
-                            _cmd: Sel,
-                            _notif: id,
-                        ) {
+                    impl ScreenChangeObserver {
+                        #[unsafe(method(screenDidChange:))]
+                        fn screen_did_change(&self, _notification: &NSNotification) {
                             if let Some(handle) = GLOBAL_APP_HANDLE.get() {
                                 let _ = handle.emit("monitor-changed", ());
                             }
                         }
-
-                        decl.add_method(
-                            sel!(screenDidChange:),
-                            handle_screen_change as extern "C" fn(&Object, Sel, id),
-                        );
-
-                        let observer_class = decl.register();
-                        let observer: id = msg_send![observer_class, new];
-
-                        // Register with NSNotificationCenter
-                        let center: id = msg_send![class!(NSNotificationCenter), defaultCenter];
-                        let name = NSString::alloc(nil)
-                            .init_str("NSApplicationDidChangeScreenParametersNotification");
-                        let _: () = msg_send![center, addObserver:observer
-                                                      selector:sel!(screenDidChange:)
-                                                      name:name
-                                                      object:nil];
                     }
+                );
+
+                static REGISTER_OBSERVER: Once = Once::new();
+
+                REGISTER_OBSERVER.call_once(|| {
+                    let observer: Retained<ScreenChangeObserver> = unsafe {
+                        msg_send![ScreenChangeObserver::alloc(), init]
+                    };
+
+                    let center = NSNotificationCenter::defaultCenter();
+                    let name = NSString::from_str("NSApplicationDidChangeScreenParametersNotification");
+
+                    unsafe {
+                        center.addObserver_selector_name_object(
+                            &observer,
+                            sel!(screenDidChange:),
+                            Some(&name),
+                            None,
+                        );
+                    }
+
+                    // Leak observer to keep it alive
+                    std::mem::forget(observer);
                 });
             }
 

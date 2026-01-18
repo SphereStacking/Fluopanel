@@ -1,31 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import type { CpuProvider, CpuInfo } from '@arcana/providers'
+import { useCpuProvider } from '@arcana/vue'
 
-const props = defineProps<{
-  provider: CpuProvider
-}>()
-
-const cpu = ref<CpuInfo | null>(null)
-let intervalId: ReturnType<typeof setInterval> | null = null
-
-const refresh = async () => {
-  try {
-    cpu.value = await props.provider.getCpu()
-  } catch (error) {
-    console.error('Failed to get CPU info:', error)
-  }
-}
-
-onMounted(() => {
-  refresh()
-  intervalId = setInterval(refresh, 2000)
-})
-
-onUnmounted(() => {
-  if (intervalId) clearInterval(intervalId)
-})
+const { data: cpu } = useCpuProvider()
 
 const usageText = computed(() => {
   if (!cpu.value) return '—'

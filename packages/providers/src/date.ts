@@ -57,7 +57,7 @@ export function createDateProvider(): DateProvider {
       return this.startPolling(callback)
     },
 
-    startPolling(callback, interval = 1000) {
+    startPolling(callback, interval = 60000) {
       const tick = () => {
         callback(this.getDate(format))
       }

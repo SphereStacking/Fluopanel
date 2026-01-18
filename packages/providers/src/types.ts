@@ -107,3 +107,13 @@ export interface BluetoothInfo {
   enabled: boolean
   devices: BluetoothDevice[]
 }
+
+export interface YouTubeMusicInfo {
+  playing: boolean
+  title?: string
+  artist?: string
+  album?: string
+  duration?: number       // seconds
+  position?: number       // seconds
+  artworkUrl?: string     // Album art URL
+}

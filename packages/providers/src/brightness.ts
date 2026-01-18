@@ -48,7 +48,7 @@ export function createBrightnessProvider(): BrightnessProvider {
 
     async setBrightness(level: number) {
       // level is 0-100, convert to 0.0-1.0 for Rust
-      return invoke('set_brightness', { brightness: Math.max(0, Math.min(100, level)) / 100 })
+      return invoke('set_brightness', { level: Math.max(0, Math.min(100, level)) / 100 })
     }
   }
 }

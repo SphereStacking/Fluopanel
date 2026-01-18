@@ -1,24 +1,21 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import type { PopupOpenOptions, PopupInfo, PopupContext, PopupAnchor, PopupAlign, PopupMode } from './types'
+import type { PopupOpenOptions, PopupInfo, PopupContext, PopupAnchor, PopupAlign } from './types'
 
 /**
  * Get current popup context from URL parameters
  */
 export function getPopupContext(): PopupContext {
   if (typeof window === 'undefined') {
-    return { id: null, isPopup: false, mode: 'toggle' }
+    return { id: null, isPopup: false }
   }
 
   const params = new URLSearchParams(window.location.search)
   const popupId = params.get('popup')
-  const modeParam = params.get('mode')
-  const mode: PopupMode = (modeParam === 'hover' || modeParam === 'hover-sticky') ? modeParam : 'toggle'
 
   return {
     id: popupId,
     isPopup: popupId !== null,
-    mode,
   }
 }
 
@@ -37,13 +34,6 @@ export function getPopupId(): string | null {
 }
 
 /**
- * Get current popup mode
- */
-export function getPopupMode(): PopupMode {
-  return getPopupContext().mode
-}
-
-/**
  * Open a popup window below the anchor element
  */
 export async function openPopup(options: PopupOpenOptions): Promise<PopupInfo> {
@@ -54,11 +44,8 @@ export async function openPopup(options: PopupOpenOptions): Promise<PopupInfo> {
     height: options.height,
     align: options.align ?? 'center',
     offsetY: options.offsetY ?? 8,
-    mode: options.mode ?? 'toggle',
   }
-  console.log('[openPopup] Invoking create_popup_window with:', params)
   const result = await invoke<PopupInfo>('create_popup_window', params)
-
   return result
 }
 
@@ -105,31 +92,30 @@ export async function updatePopupPosition(
 }
 
 /**
- * Listen for popup blur events (focus lost)
+ * Listen for popup closed events
  * Returns unsubscribe function
  */
-export async function onPopupBlur(
+export async function onPopupClosed(
   callback: (popupId: string) => void
 ): Promise<UnlistenFn> {
-  return await listen<string>('popup-blur', (event) => {
+  return await listen<string>('popup-closed', (event) => {
     callback(event.payload)
   })
 }
 
 /**
  * Create a popup controller instance
- * Manages popup lifecycle and blur events
- * Note: Hover state management is handled by Rust side
+ * Manages popup lifecycle and close events
  */
 export function createPopupController() {
-  let blurUnlisten: UnlistenFn | null = null
-  const blurCallbacks = new Map<string, () => void>()
+  let closeUnlisten: UnlistenFn | null = null
+  const closeCallbacks = new Map<string, () => void>()
 
-  const ensureBlurListener = async () => {
-    if (blurUnlisten) return
+  const ensureCloseListener = async () => {
+    if (closeUnlisten) return
 
-    blurUnlisten = await onPopupBlur((popupId) => {
-      const callback = blurCallbacks.get(popupId)
+    closeUnlisten = await onPopupClosed((popupId) => {
+      const callback = closeCallbacks.get(popupId)
       if (callback) {
         callback()
       }
@@ -138,16 +124,15 @@ export function createPopupController() {
 
   return {
     /**
-     * Open a popup and optionally register blur callback
+     * Open a popup and optionally register close callback
      */
     async open(
       options: PopupOpenOptions,
-      onBlur?: () => void
+      onClose?: () => void
     ): Promise<PopupInfo> {
-      // Ensure blur listener is active
-      if (onBlur) {
-        await ensureBlurListener()
-        blurCallbacks.set(options.id, onBlur)
+      if (onClose) {
+        await ensureCloseListener()
+        closeCallbacks.set(options.id, onClose)
       }
 
       return await openPopup(options)
@@ -157,7 +142,7 @@ export function createPopupController() {
      * Close a popup
      */
     async close(popupId: string): Promise<void> {
-      blurCallbacks.delete(popupId)
+      closeCallbacks.delete(popupId)
       await closePopup(popupId)
     },
 
@@ -165,7 +150,7 @@ export function createPopupController() {
      * Close all popups
      */
     async closeAll(): Promise<void> {
-      blurCallbacks.clear()
+      closeCallbacks.clear()
       await closeAllPopups()
     },
 
@@ -183,11 +168,11 @@ export function createPopupController() {
      * Cleanup resources
      */
     destroy() {
-      if (blurUnlisten) {
-        blurUnlisten()
-        blurUnlisten = null
+      if (closeUnlisten) {
+        closeUnlisten()
+        closeUnlisten = null
       }
-      blurCallbacks.clear()
+      closeCallbacks.clear()
     },
   }
 }

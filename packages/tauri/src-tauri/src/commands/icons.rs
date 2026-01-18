@@ -73,69 +73,48 @@ pub fn clear_icon_cache() -> Result<(), String> {
 #[cfg(target_os = "macos")]
 fn fetch_icon_for_app(app_name: &str) -> Option<String> {
     use base64::Engine;
-    use cocoa::base::{id, nil};
-    use cocoa::foundation::NSAutoreleasePool;
-    use objc::{class, msg_send, sel, sel_impl};
-    use std::ffi::CStr;
+    use objc2::msg_send;
+    use objc2_app_kit::{NSBitmapImageFileType, NSBitmapImageRep, NSWorkspace};
+    use objc2_foundation::{NSDictionary, NSSize, NSString};
 
-    unsafe {
-        let _pool = NSAutoreleasePool::new(nil);
+    // Try to find the app bundle path
+    let bundle_path = find_app_bundle_path(app_name)?;
 
-        // Get NSWorkspace shared instance
-        let workspace: id = msg_send![class!(NSWorkspace), sharedWorkspace];
+    let workspace = NSWorkspace::sharedWorkspace();
 
-        // Try to find the app bundle path
-        let bundle_path = find_app_bundle_path(app_name)?;
+    // Create NSString from path
+    let path_nsstring = NSString::from_str(&bundle_path);
 
-        // Create NSString from path
-        let path_nsstring = create_nsstring(&bundle_path);
+    // Get the icon for the application
+    let icon = workspace.iconForFile(&path_nsstring);
 
-        // Get the icon for the application
-        let icon: id = msg_send![workspace, iconForFile: path_nsstring];
+    // Resize icon to desired size
+    let size = NSSize::new(ICON_SIZE, ICON_SIZE);
+    icon.setSize(size);
 
-        if icon == nil {
-            return None;
-        }
+    // Convert to PNG data via NSBitmapImageRep
+    let tiff_data = icon.TIFFRepresentation()?;
 
-        // Resize icon to desired size
-        let size = cocoa::foundation::NSSize::new(ICON_SIZE, ICON_SIZE);
-        let _: () = msg_send![icon, setSize: size];
+    let bitmap_rep = NSBitmapImageRep::imageRepWithData(&tiff_data)?;
 
-        // Convert to PNG data via NSBitmapImageRep
-        let tiff_data: id = msg_send![icon, TIFFRepresentation];
-        if tiff_data == nil {
-            return None;
-        }
+    // Convert to PNG with empty properties dictionary
+    let empty_dict: objc2::rc::Retained<NSDictionary<NSString, objc2::runtime::AnyObject>> =
+        NSDictionary::new();
+    let png_data = unsafe {
+        bitmap_rep.representationUsingType_properties(NSBitmapImageFileType::PNG, &empty_dict)
+    }?;
 
-        let bitmap_rep: id = msg_send![class!(NSBitmapImageRep), imageRepWithData: tiff_data];
-        if bitmap_rep == nil {
-            return None;
-        }
+    // Get bytes and encode as base64
+    let len: usize = unsafe { msg_send![&*png_data, length] };
+    let bytes_ptr: *const u8 = unsafe { msg_send![&*png_data, bytes] };
+    let slice = unsafe { std::slice::from_raw_parts(bytes_ptr, len) };
 
-        // Convert to PNG (NSBitmapImageFileTypePNG = 4)
-        let png_data: id = msg_send![
-            bitmap_rep,
-            representationUsingType: 4_u64
-            properties: nil
-        ];
-        if png_data == nil {
-            return None;
-        }
-
-        // Get bytes and encode as base64
-        let length: usize = msg_send![png_data, length];
-        let bytes: *const u8 = msg_send![png_data, bytes];
-        let slice = std::slice::from_raw_parts(bytes, length);
-
-        Some(base64::engine::general_purpose::STANDARD.encode(slice))
-    }
+    Some(base64::engine::general_purpose::STANDARD.encode(slice))
 }
 
 #[cfg(target_os = "macos")]
 fn find_app_bundle_path(app_name: &str) -> Option<String> {
-    use cocoa::base::{id, nil};
-    use objc::{class, msg_send, sel, sel_impl};
-    use std::ffi::CStr;
+    use objc2_app_kit::NSWorkspace;
 
     // First, try standard application directories
     let search_paths = [
@@ -161,34 +140,15 @@ fn find_app_bundle_path(app_name: &str) -> Option<String> {
     }
 
     // Fallback: use NSWorkspace to find running app by name
-    unsafe {
-        let workspace: id = msg_send![class!(NSWorkspace), sharedWorkspace];
-        let running_apps: id = msg_send![workspace, runningApplications];
-        let count: usize = msg_send![running_apps, count];
+    let workspace = NSWorkspace::sharedWorkspace();
+    let running_apps = workspace.runningApplications();
 
-        for i in 0..count {
-            let app: id = msg_send![running_apps, objectAtIndex: i];
-            let localized_name: id = msg_send![app, localizedName];
-
-            if localized_name != nil {
-                let name_str: *const std::os::raw::c_char = msg_send![localized_name, UTF8String];
-                if !name_str.is_null() {
-                    let name = CStr::from_ptr(name_str).to_string_lossy();
-
-                    if name == app_name {
-                        let bundle_url: id = msg_send![app, bundleURL];
-                        if bundle_url != nil {
-                            let path: id = msg_send![bundle_url, path];
-                            if path != nil {
-                                let path_str: *const std::os::raw::c_char =
-                                    msg_send![path, UTF8String];
-                                if !path_str.is_null() {
-                                    return Some(
-                                        CStr::from_ptr(path_str).to_string_lossy().into_owned(),
-                                    );
-                                }
-                            }
-                        }
+    for app in running_apps {
+        if let Some(name) = app.localizedName() {
+            if name.to_string() == app_name {
+                if let Some(bundle_url) = app.bundleURL() {
+                    if let Some(path) = bundle_url.path() {
+                        return Some(path.to_string());
                     }
                 }
             }
@@ -211,18 +171,6 @@ fn find_app_bundle_path(app_name: &str) -> Option<String> {
     }
 
     None
-}
-
-#[cfg(target_os = "macos")]
-unsafe fn create_nsstring(s: &str) -> cocoa::base::id {
-    use cocoa::base::id;
-    use objc::{class, msg_send, sel, sel_impl};
-
-    let cls = class!(NSString);
-    let bytes = s.as_ptr() as *const std::os::raw::c_char;
-    let len = s.len();
-    let nsstring: id = msg_send![cls, alloc];
-    msg_send![nsstring, initWithBytes:bytes length:len encoding:4_u64] // NSUTF8StringEncoding = 4
 }
 
 #[cfg(not(target_os = "macos"))]

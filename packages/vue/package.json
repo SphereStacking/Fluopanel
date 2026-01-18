@@ -15,6 +15,7 @@
   "peerDependencies": {
     "vue": "^3.4.0",
     "@arcana/core": "^0.1.0",
+    "@arcana/providers": "^0.1.0",
     "@tauri-apps/api": "^2.0.0"
   }
 }

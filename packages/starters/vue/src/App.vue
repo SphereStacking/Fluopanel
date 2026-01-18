@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { createProviders } from '@arcana/providers'
 import { Widget, useCoordinator, Popup, usePopupMode } from '@arcana/vue'
 import Bar from './components/Bar.vue'
 import GitHubIssuesPopup from './components/popups/GitHubIssuesPopup.vue'
 import GitHubPRsPopup from './components/popups/GitHubPRsPopup.vue'
 import GitHubNotificationsPopup from './components/popups/GitHubNotificationsPopup.vue'
 
-const providers = createProviders()
 const { isPopup } = usePopupMode()
 
 // Coordinator mode: auto-hide the main window after widgets are created
@@ -20,7 +18,7 @@ useCoordinator({ autoHide: !isPopup.value })
     id="bar"
     :position="{ top: 9, left: 20, right: 20, height: 60 }"
   >
-    <Bar :providers="providers" />
+    <Bar />
   </Widget>
 
   <!-- GitHub Popups -->

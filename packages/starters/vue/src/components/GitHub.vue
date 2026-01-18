@@ -25,16 +25,11 @@ const prsPopup = usePopup({
   align: 'center',
   offsetY: 8,
 })
-// Notifications uses hover mode with Rust-side trigger monitoring
-// triggerRef enables global mouse detection even when window is not focused
 const notificationsPopup = usePopup({
-  mode: 'hover',
   width: 340,
   height: 420,
   align: 'center',
   offsetY: 8,
-  triggerRef: notificationsTriggerRef,
-  triggerId: 'github-notifications',
 })
 
 // Click handlers
@@ -47,6 +42,12 @@ async function openIssues() {
 async function openPRs() {
   if (prsTriggerRef.value) {
     await prsPopup.toggle('github-prs', prsTriggerRef.value)
+  }
+}
+
+async function openNotifications() {
+  if (notificationsTriggerRef.value) {
+    await notificationsPopup.toggle('github-notifications', notificationsTriggerRef.value)
   }
 }
 
@@ -117,11 +118,11 @@ const notificationColor = computed(() => {
       >
     </div>
 
-    <!-- Unread Notifications (hover mode with Rust-side trigger monitoring) -->
+    <!-- Unread Notifications -->
     <div
       ref="notificationsTriggerRef"
-      class="flex items-center gap-1 py-1 px-2 rounded-lg text-[12px] tracking-wide transition-all duration-200 cursor-pointer group"
-      :class="notificationsPopup.isOpen.value ? 'bg-widget-glass-hover' : 'hover:bg-widget-glass-hover'"
+      @click="openNotifications"
+      class="flex items-center gap-1 py-1 px-2 rounded-lg text-[12px] tracking-wide transition-all duration-200 cursor-pointer group hover:bg-widget-glass-hover"
     >
       <Icon
         icon="octicon:inbox-16"

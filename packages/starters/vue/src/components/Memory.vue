@@ -1,31 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import type { MemoryProvider, MemoryInfo } from '@arcana/providers'
+import { useMemoryProvider } from '@arcana/vue'
 
-const props = defineProps<{
-  provider: MemoryProvider
-}>()
-
-const memory = ref<MemoryInfo | null>(null)
-let intervalId: ReturnType<typeof setInterval> | null = null
-
-const refresh = async () => {
-  try {
-    memory.value = await props.provider.getMemory()
-  } catch (error) {
-    console.error('Failed to get memory info:', error)
-  }
-}
-
-onMounted(() => {
-  refresh()
-  intervalId = setInterval(refresh, 5000)
-})
-
-onUnmounted(() => {
-  if (intervalId) clearInterval(intervalId)
-})
+const { data: memory } = useMemoryProvider()
 
 const formatBytes = (bytes: number) => {
   const gb = bytes / (1024 * 1024 * 1024)

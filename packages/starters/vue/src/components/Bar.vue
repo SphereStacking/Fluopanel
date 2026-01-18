@@ -1,18 +1,4 @@
 <script setup lang="ts">
-import type {
-  AerospaceProvider,
-  BatteryProvider,
-  CpuProvider,
-  MemoryProvider,
-  NetworkProvider,
-  DateProvider,
-  MediaProvider,
-  VolumeProvider,
-  ActiveAppProvider,
-  DiskProvider,
-  BrightnessProvider,
-  BluetoothProvider,
-} from '@arcana/providers'
 import Workspaces from './Workspaces.vue'
 import FrontApp from './FrontApp.vue'
 import Clock from './Clock.vue'
@@ -26,25 +12,7 @@ import Disk from './Disk.vue'
 import Brightness from './Brightness.vue'
 import Bluetooth from './Bluetooth.vue'
 import GitHub from './GitHub.vue'
-
-interface Providers {
-  aerospace: AerospaceProvider
-  battery: BatteryProvider
-  cpu: CpuProvider
-  memory: MemoryProvider
-  network: NetworkProvider
-  date: DateProvider
-  media: MediaProvider
-  volume: VolumeProvider
-  activeApp: ActiveAppProvider
-  disk: DiskProvider
-  brightness: BrightnessProvider
-  bluetooth: BluetoothProvider
-}
-
-const props = defineProps<{
-  providers: Providers
-}>()
+import YouTubeMusic from './YouTubeMusic.vue'
 </script>
 
 <template>
@@ -99,29 +67,30 @@ const props = defineProps<{
 
         <div class="w-px h-4 bg-[var(--glass-border)]" />
 
-        <Workspaces :provider="props.providers.aerospace" />
-        <FrontApp :provider="props.providers.activeApp" />
+        <Workspaces />
+        <FrontApp />
       </div>
 
       <!-- Center section: Media & Clock -->
       <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
-        <Media :provider="props.providers.media" />
-        <Clock :provider="props.providers.date" />
+        <Media />
+        <YouTubeMusic />
+        <Clock />
       </div>
 
       <!-- Right section: System indicators -->
       <div class="flex items-center gap-1 z-10">
         <GitHub />
-        <Bluetooth :provider="props.providers.bluetooth" />
-        <Volume :provider="props.providers.volume" />
-        <Brightness :provider="props.providers.brightness" />
-        <Network :provider="props.providers.network" />
         <div class="w-px h-4 bg-[var(--glass-border)] mx-1" />
-        <Disk :provider="props.providers.disk" />
-        <Cpu :provider="props.providers.cpu" />
-        <Memory :provider="props.providers.memory" />
+        <Volume />
+        <Brightness />
+        <Network />
         <div class="w-px h-4 bg-[var(--glass-border)] mx-1" />
-        <Battery :provider="props.providers.battery" />
+        <Disk />
+        <Cpu />
+        <Bluetooth />
+        <Memory />
+        <Battery />
       </div>
     </div>
   </div>

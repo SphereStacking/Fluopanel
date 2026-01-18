@@ -1,31 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import type { NetworkProvider, NetworkInfo } from '@arcana/providers'
+import { useNetworkProvider } from '@arcana/vue'
 
-const props = defineProps<{
-  provider: NetworkProvider
-}>()
-
-const network = ref<NetworkInfo | null>(null)
-let intervalId: ReturnType<typeof setInterval> | null = null
-
-const refresh = async () => {
-  try {
-    network.value = await props.provider.getNetwork()
-  } catch (error) {
-    console.error('Failed to get network info:', error)
-  }
-}
-
-onMounted(() => {
-  refresh()
-  intervalId = setInterval(refresh, 10000)
-})
-
-onUnmounted(() => {
-  if (intervalId) clearInterval(intervalId)
-})
+const { data: network } = useNetworkProvider()
 
 const icon = computed(() => {
   if (!network.value || !network.value.connected) return 'mdi:wifi-off'

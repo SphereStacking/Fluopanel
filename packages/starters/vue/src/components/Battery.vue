@@ -1,31 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import type { BatteryProvider, BatteryInfo } from '@arcana/providers'
+import { useBatteryProvider } from '@arcana/vue'
 
-const props = defineProps<{
-  provider: BatteryProvider
-}>()
-
-const battery = ref<BatteryInfo | null>(null)
-let intervalId: ReturnType<typeof setInterval> | null = null
-
-const refresh = async () => {
-  try {
-    battery.value = await props.provider.getBattery()
-  } catch (error) {
-    console.error('Failed to get battery info:', error)
-  }
-}
-
-onMounted(() => {
-  refresh()
-  intervalId = setInterval(refresh, 30000)
-})
-
-onUnmounted(() => {
-  if (intervalId) clearInterval(intervalId)
-})
+const { data: battery } = useBatteryProvider()
 
 const icon = computed(() => {
   if (!battery.value) return 'mdi:battery'

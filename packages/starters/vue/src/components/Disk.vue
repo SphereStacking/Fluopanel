@@ -1,31 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import type { DiskProvider, DiskInfo } from '@arcana/providers'
+import { useDiskProvider } from '@arcana/vue'
 
-const props = defineProps<{
-  provider: DiskProvider
-}>()
-
-const disk = ref<DiskInfo | null>(null)
-let intervalId: ReturnType<typeof setInterval> | null = null
-
-const refresh = async () => {
-  try {
-    disk.value = await props.provider.getDisk('/')
-  } catch (error) {
-    console.error('Failed to get disk info:', error)
-  }
-}
-
-onMounted(() => {
-  refresh()
-  intervalId = setInterval(refresh, 60000)
-})
-
-onUnmounted(() => {
-  if (intervalId) clearInterval(intervalId)
-})
+const { data: disk } = useDiskProvider('/')
 
 const availableText = computed(() => {
   if (!disk.value) return ''
