@@ -238,6 +238,10 @@ pub fn update_widget_position(
 #[command]
 pub fn hide_window(app: AppHandle, label: String) -> Result<(), String> {
     if let Some(window) = app.get_webview_window(&label) {
+        // Ignore cursor events so clicks pass through
+        window
+            .set_ignore_cursor_events(true)
+            .map_err(|e| e.to_string())?;
         window.hide().map_err(|e| e.to_string())?;
         Ok(())
     } else {

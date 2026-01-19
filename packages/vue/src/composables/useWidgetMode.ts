@@ -7,6 +7,7 @@ import {
   hideCoordinatorWindow,
   type WidgetContext,
 } from '@arcana/core'
+import { waitForAllWidgets } from './widgetRegistry'
 
 /**
  * Vue composable for widget mode detection and coordinator management.
@@ -47,6 +48,8 @@ export function useCoordinator(options?: { autoHide?: boolean }) {
 
   onMounted(async () => {
     if (isCoordinator.value && autoHide) {
+      // Wait for all widget windows to be created first
+      await waitForAllWidgets()
       await hideCoordinator()
     }
   })

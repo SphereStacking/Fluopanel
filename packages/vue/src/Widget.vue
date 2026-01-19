@@ -10,6 +10,7 @@ import {
   type WidgetPosition,
   type WidgetWindowConfig,
 } from '@arcana/core'
+import { registerPendingWidget, markWidgetCompleted } from './composables/widgetRegistry'
 
 const props = defineProps<{
   /** Unique widget identifier */
@@ -33,6 +34,11 @@ const shouldCreateWindow = computed(() => {
   return isCoordinatorMode
 })
 
+// Register this widget as pending if in coordinator mode
+if (shouldCreateWindow.value) {
+  registerPendingWidget(props.id)
+}
+
 let unlisten: UnlistenFn | null = null
 
 async function createWindow() {
@@ -42,9 +48,8 @@ async function createWindow() {
       position: props.position,
       window: props.window,
     })
-  } catch (error) {
+  } catch {
     // Window might already exist (hot reload), update position instead
-    console.debug(`[Widget ${props.id}] Window exists, updating position`)
     await updateWidgetPosition(props.id, props.position)
   }
 }
@@ -60,6 +65,9 @@ async function destroyWindow() {
 onMounted(async () => {
   if (shouldCreateWindow.value) {
     await createWindow()
+
+    // Mark widget as completed in registry
+    markWidgetCompleted(props.id)
 
     // Subscribe to monitor changes for repositioning
     unlisten = await listen('monitor-changed', async () => {
