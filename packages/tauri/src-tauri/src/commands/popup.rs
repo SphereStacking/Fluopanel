@@ -1,5 +1,22 @@
 use serde::{Deserialize, Serialize};
-use tauri::{command, AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{command, AppHandle, Emitter, Manager, WebviewUrl};
+
+#[cfg(not(target_os = "macos"))]
+use tauri::WebviewWindowBuilder;
+
+#[cfg(target_os = "macos")]
+use tauri_nspanel::{tauri_panel, ManagerExt, PanelBuilder, PanelLevel};
+
+// Define NSPanel class for popups (macOS only)
+#[cfg(target_os = "macos")]
+tauri_panel! {
+    panel!(PopupPanel {
+        config: {
+            can_become_key_window: true,
+            is_floating_panel: true
+        }
+    })
+}
 
 /// Popup alignment relative to anchor element
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -27,6 +44,7 @@ pub struct PopupAnchor {
 pub struct PopupInfo {
     pub id: String,
     pub label: String,
+    pub closed: bool,
 }
 
 /// Get monitor info containing the anchor point
@@ -100,9 +118,9 @@ fn calculate_popup_position(
     (x, y)
 }
 
-/// Create a popup window (Toggle mode only - closes on blur)
+/// Open a popup window (toggle mode: if visible, hide it; if hidden, show it; otherwise create new)
 #[command]
-pub async fn create_popup_window(
+pub fn open_popup(
     app: AppHandle,
     popup_id: String,
     anchor: PopupAnchor,
@@ -115,9 +133,59 @@ pub async fn create_popup_window(
     let align = align.unwrap_or_default();
     let offset_y = offset_y.unwrap_or(8.0);
 
-    // Close existing popup with same ID if exists
-    if let Some(window) = app.get_webview_window(&label) {
-        let _ = window.destroy();
+    // macOS: Check if panel already exists and reuse it
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(panel) = app.get_webview_panel(&label) {
+            if panel.is_visible() {
+                // Toggle off: hide it (safe from event handler)
+                panel.hide();
+                let _ = app.emit("popup-closed", &popup_id);
+                return Ok(PopupInfo {
+                    id: popup_id,
+                    label,
+                    closed: true,
+                });
+            } else {
+                // Toggle on: update position and show
+                let (monitor_x, monitor_y, monitor_width, monitor_height) =
+                    get_monitor_at_point(&app, anchor.x, anchor.y)?;
+                let (x, y) = calculate_popup_position(
+                    &anchor,
+                    width,
+                    height,
+                    &align,
+                    offset_y,
+                    monitor_x,
+                    monitor_y,
+                    monitor_width,
+                    monitor_height,
+                );
+                if let Some(window) = app.get_webview_window(&label) {
+                    let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition { x, y }));
+                }
+                panel.show();
+                return Ok(PopupInfo {
+                    id: popup_id,
+                    label,
+                    closed: false,
+                });
+            }
+        }
+    }
+
+    // Non-macOS: Toggle using window destroy
+    #[cfg(not(target_os = "macos"))]
+    {
+        if let Some(window) = app.get_webview_window(&label) {
+            let _ = window.destroy();
+            let _ = app.emit("popup-closed", &popup_id);
+            return Ok(PopupInfo {
+                id: popup_id,
+                label,
+                closed: true,
+            });
+        }
     }
 
     // Get monitor info
@@ -146,54 +214,122 @@ pub async fn create_popup_window(
 
     let webview_url = WebviewUrl::External(url.parse().map_err(|e| format!("Invalid URL: {}", e))?);
 
-    // Create window
-    let window = WebviewWindowBuilder::new(&app, &label, webview_url)
-        .title(&popup_id)
-        .decorations(false)
-        .transparent(true)
-        .always_on_top(true)
-        .skip_taskbar(true)
-        .resizable(false)
-        .visible(false)
-        .focused(true)
-        .position(x, y)
-        .inner_size(width, height)
-        .build()
-        .map_err(|e| e.to_string())?;
+    // macOS: Create as NSPanel for proper first-click behavior
+    #[cfg(target_os = "macos")]
+    {
+        let app_for_blur = app.clone();
+        let popup_id_for_blur = popup_id.clone();
+        let label_for_blur = label.clone();
 
-    // Close on blur (Toggle mode behavior)
-    let app_for_blur = app.clone();
-    let popup_id_for_blur = popup_id.clone();
-    let window_for_blur = window.clone();
-    window.on_window_event(move |event| {
-        if let tauri::WindowEvent::Focused(false) = event {
-            let _ = window_for_blur.close();
-            let _ = app_for_blur.emit("popup-closed", &popup_id_for_blur);
+        let _panel = PanelBuilder::<_, PopupPanel>::new(&app, &label)
+            .url(webview_url)
+            .level(PanelLevel::Floating)
+            .title(&popup_id)
+            .floating(true)
+            .transparent(true)
+            .becomes_key_only_if_needed(true)
+            .with_window(|w| w.decorations(false).transparent(true))
+            .position(tauri::Position::Logical(tauri::LogicalPosition { x, y }))
+            .size(tauri::Size::Logical(tauri::LogicalSize { width, height }))
+            .build()
+            .map_err(|e| e.to_string())?;
+
+        // Setup blur handler - use hide() instead of close() to avoid Obj-C exception
+        if let Some(window) = app.get_webview_window(&label) {
+            window.on_window_event(move |event| {
+                if let tauri::WindowEvent::Focused(false) = event {
+                    // Use order_out (hide) instead of close - safe from event handler
+                    // This just removes the panel from screen without destroying it
+                    if let Ok(panel) = app_for_blur.get_webview_panel(&label_for_blur) {
+                        panel.hide();
+                    }
+                    let _ = app_for_blur.emit("popup-closed", &popup_id_for_blur);
+                }
+            });
         }
-    });
+    }
 
-    // Show window after setup
-    window.show().map_err(|e| e.to_string())?;
+    // Non-macOS: Use standard WebviewWindow
+    #[cfg(not(target_os = "macos"))]
+    {
+        let window = WebviewWindowBuilder::new(&app, &label, webview_url)
+            .title(&popup_id)
+            .decorations(false)
+            .transparent(true)
+            .always_on_top(true)
+            .skip_taskbar(true)
+            .resizable(false)
+            .visible(true)
+            .focused(true)
+            .position(x, y)
+            .inner_size(width, height)
+            .build()
+            .map_err(|e| e.to_string())?;
+
+        // Close on blur
+        let app_for_blur = app.clone();
+        let popup_id_for_blur = popup_id.clone();
+        let label_for_blur = label.clone();
+        window.on_window_event(move |event| {
+            if let tauri::WindowEvent::Focused(false) = event {
+                let app = app_for_blur.clone();
+                let label = label_for_blur.clone();
+                let popup_id = popup_id_for_blur.clone();
+
+                // Schedule close asynchronously to avoid potential issues
+                // when closing window from within its own event handler
+                tauri::async_runtime::spawn(async move {
+                    if let Some(win) = app.get_webview_window(&label) {
+                        let _ = win.close();
+                    }
+                    let _ = app.emit("popup-closed", &popup_id);
+                });
+            }
+        });
+    }
 
     Ok(PopupInfo {
         id: popup_id,
         label,
+        closed: false,
     })
 }
 
-/// Close a popup window
+/// Close a popup window (explicitly destroy it)
 #[command]
-pub fn close_popup_window(app: AppHandle, popup_id: String) -> Result<(), String> {
+pub fn close_popup(app: AppHandle, popup_id: String) -> Result<(), String> {
     let label = format!("popup-{}", popup_id);
 
-    if let Some(window) = app.get_webview_window(&label) {
-        window.close().map_err(|e| e.to_string())?;
+    #[cfg(target_os = "macos")]
+    {
+        // First hide the panel safely
+        if let Ok(panel) = app.get_webview_panel(&label) {
+            panel.hide();
+        }
+        // Then schedule destroy outside event context
+        if let Some(window) = app.get_webview_window(&label) {
+            tauri::async_runtime::spawn(async move {
+                let _ = window.destroy();
+            });
+        }
+        let _ = app.emit("popup-closed", &popup_id);
+        return Ok(());
     }
 
+    #[cfg(not(target_os = "macos"))]
+    {
+        if let Some(window) = app.get_webview_window(&label) {
+            window.destroy().map_err(|e| e.to_string())?;
+            let _ = app.emit("popup-closed", &popup_id);
+        }
+        return Ok(());
+    }
+
+    #[allow(unreachable_code)]
     Ok(())
 }
 
-/// Close all popup windows
+/// Close all popup windows (explicitly destroy them)
 #[command]
 pub fn close_all_popups(app: AppHandle) -> Result<(), String> {
     let windows: Vec<String> = app
@@ -204,8 +340,29 @@ pub fn close_all_popups(app: AppHandle) -> Result<(), String> {
         .collect();
 
     for label in windows {
-        if let Some(window) = app.get_webview_window(&label) {
-            let _ = window.close();
+        let popup_id = label.strip_prefix("popup-").unwrap_or(&label).to_string();
+
+        #[cfg(target_os = "macos")]
+        {
+            // First hide the panel safely
+            if let Ok(panel) = app.get_webview_panel(&label) {
+                panel.hide();
+            }
+            // Then schedule destroy
+            if let Some(window) = app.get_webview_window(&label) {
+                tauri::async_runtime::spawn(async move {
+                    let _ = window.destroy();
+                });
+            }
+            let _ = app.emit("popup-closed", &popup_id);
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        {
+            if let Some(window) = app.get_webview_window(&label) {
+                let _ = window.destroy();
+                let _ = app.emit("popup-closed", &popup_id);
+            }
         }
     }
 
@@ -220,45 +377,4 @@ pub fn get_open_popups(app: AppHandle) -> Vec<String> {
         .filter(|k| k.starts_with("popup-"))
         .map(|k| k.strip_prefix("popup-").unwrap_or(k).to_string())
         .collect()
-}
-
-/// Update popup position (for repositioning when anchor moves)
-#[command]
-pub fn update_popup_position(
-    app: AppHandle,
-    popup_id: String,
-    anchor: PopupAnchor,
-    width: f64,
-    height: f64,
-    align: Option<PopupAlign>,
-    offset_y: Option<f64>,
-) -> Result<(), String> {
-    let label = format!("popup-{}", popup_id);
-    let align = align.unwrap_or_default();
-    let offset_y = offset_y.unwrap_or(8.0);
-
-    let window = app
-        .get_webview_window(&label)
-        .ok_or_else(|| format!("Popup '{}' not found", popup_id))?;
-
-    let (monitor_x, monitor_y, monitor_width, monitor_height) =
-        get_monitor_at_point(&app, anchor.x, anchor.y)?;
-
-    let (x, y) = calculate_popup_position(
-        &anchor,
-        width,
-        height,
-        &align,
-        offset_y,
-        monitor_x,
-        monitor_y,
-        monitor_width,
-        monitor_height,
-    );
-
-    window
-        .set_position(tauri::Position::Logical(tauri::LogicalPosition { x, y }))
-        .map_err(|e| e.to_string())?;
-
-    Ok(())
 }

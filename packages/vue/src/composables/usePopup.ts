@@ -45,17 +45,35 @@ export interface UsePopupReturn {
   isOpen: ComputedRef<boolean>
   /** Currently open popup ID */
   openPopupId: Ref<string | null>
-  /** Open popup below the trigger element */
-  open: (triggerId: string, triggerElement: HTMLElement) => Promise<void>
-  /** Close popup */
-  close: () => Promise<void>
   /** Toggle popup open/closed */
   toggle: (triggerId: string, triggerElement: HTMLElement) => Promise<void>
+  /** Close popup */
+  close: () => Promise<void>
+}
+
+/**
+ * Helper to get anchor coordinates from trigger element
+ */
+async function getAnchorFromElement(triggerElement: HTMLElement): Promise<PopupAnchor> {
+  const rect = triggerElement.getBoundingClientRect()
+  const window = getCurrentWindow()
+  const windowPos = await window.outerPosition()
+  const scaleFactor = await window.scaleFactor()
+
+  const windowX = windowPos.x / scaleFactor
+  const windowY = windowPos.y / scaleFactor
+
+  return {
+    x: windowX + rect.x,
+    y: windowY + rect.y,
+    width: rect.width,
+    height: rect.height,
+  }
 }
 
 /**
  * Vue composable for managing popups (Toggle mode).
- * Click to open, blur to close.
+ * Click to open/close, blur automatically closes.
  */
 export function usePopup(options: UsePopupOptions): UsePopupReturn {
   const { width, height, align = 'end', offsetY = 8 } = options
@@ -66,7 +84,6 @@ export function usePopup(options: UsePopupOptions): UsePopupReturn {
 
   let popupClosedUnlisten: UnlistenFn | null = null
 
-  // Setup event listeners
   async function setupEventListeners() {
     if (!popupClosedUnlisten) {
       popupClosedUnlisten = await listen<string>('popup-closed', (event) => {
@@ -85,33 +102,11 @@ export function usePopup(options: UsePopupOptions): UsePopupReturn {
     }
   })
 
-  async function open(triggerId: string, triggerElement: HTMLElement): Promise<void> {
-    // Close existing popup if different
-    if (openPopupId.value && openPopupId.value !== triggerId) {
-      await controller.close(openPopupId.value)
-    }
+  async function toggle(triggerId: string, triggerElement: HTMLElement): Promise<void> {
+    const anchor = await getAnchorFromElement(triggerElement)
 
-    // Get trigger element position (viewport coordinates)
-    const rect = triggerElement.getBoundingClientRect()
-
-    // Get parent window position to convert to screen coordinates
-    const window = getCurrentWindow()
-    const windowPos = await window.outerPosition()
-    const scaleFactor = await window.scaleFactor()
-
-    // Convert window position from physical to logical pixels
-    const windowX = windowPos.x / scaleFactor
-    const windowY = windowPos.y / scaleFactor
-
-    // Create anchor with screen coordinates
-    const anchor: PopupAnchor = {
-      x: windowX + rect.x,
-      y: windowY + rect.y,
-      width: rect.width,
-      height: rect.height,
-    }
-
-    await controller.open({
+    // Use toggle mode: open_popup returns { closed: true } if it closed an existing popup
+    const result = await controller.open({
       id: triggerId,
       anchor,
       width,
@@ -120,10 +115,12 @@ export function usePopup(options: UsePopupOptions): UsePopupReturn {
       offsetY,
     })
 
-    openPopupId.value = triggerId
-
-    // Setup event listeners after opening
-    await setupEventListeners()
+    if (result.closed) {
+      openPopupId.value = null
+    } else {
+      openPopupId.value = triggerId
+      await setupEventListeners()
+    }
   }
 
   async function close(): Promise<void> {
@@ -133,19 +130,10 @@ export function usePopup(options: UsePopupOptions): UsePopupReturn {
     }
   }
 
-  async function toggle(triggerId: string, triggerElement: HTMLElement): Promise<void> {
-    if (openPopupId.value === triggerId) {
-      await close()
-    } else {
-      await open(triggerId, triggerElement)
-    }
-  }
-
   return {
     isOpen,
     openPopupId,
-    open,
-    close,
     toggle,
+    close,
   }
 }

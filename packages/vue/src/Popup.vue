@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { isPopup, getPopupId } from '@arcana/core'
 
 const props = defineProps<{
-  /** Popup identifier (must match the ID used in usePopup.open()) */
+  /** Popup identifier (must match the ID used in usePopup.toggle()) */
   id: string
 }>()
 

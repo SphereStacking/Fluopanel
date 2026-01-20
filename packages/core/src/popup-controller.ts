@@ -1,6 +1,12 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import type { PopupOpenOptions, PopupInfo, PopupContext, PopupAnchor, PopupAlign } from './types'
+import type {
+  PopupOpenOptions,
+  PopupInfo,
+  PopupContext,
+  PopupAnchor,
+  PopupAlign,
+} from './types'
 
 /**
  * Get current popup context from URL parameters
@@ -34,7 +40,8 @@ export function getPopupId(): string | null {
 }
 
 /**
- * Open a popup window below the anchor element
+ * Open a popup window below the anchor element (toggle mode)
+ * If popup already exists, it will be closed.
  */
 export async function openPopup(options: PopupOpenOptions): Promise<PopupInfo> {
   const params = {
@@ -45,15 +52,14 @@ export async function openPopup(options: PopupOpenOptions): Promise<PopupInfo> {
     align: options.align ?? 'center',
     offsetY: options.offsetY ?? 8,
   }
-  const result = await invoke<PopupInfo>('create_popup_window', params)
-  return result
+  return await invoke<PopupInfo>('open_popup', params)
 }
 
 /**
  * Close a popup window by ID
  */
 export async function closePopup(popupId: string): Promise<void> {
-  await invoke('close_popup_window', { popupId })
+  await invoke('close_popup', { popupId })
 }
 
 /**
@@ -68,27 +74,6 @@ export async function closeAllPopups(): Promise<void> {
  */
 export async function getOpenPopups(): Promise<string[]> {
   return await invoke<string[]>('get_open_popups')
-}
-
-/**
- * Update popup position (for repositioning when anchor moves)
- */
-export async function updatePopupPosition(
-  popupId: string,
-  anchor: PopupAnchor,
-  width: number,
-  height: number,
-  align?: PopupAlign,
-  offsetY?: number
-): Promise<void> {
-  await invoke('update_popup_position', {
-    popupId,
-    anchor,
-    width,
-    height,
-    align: align ?? 'center',
-    offsetY: offsetY ?? 8,
-  })
 }
 
 /**
@@ -118,13 +103,14 @@ export function createPopupController() {
       const callback = closeCallbacks.get(popupId)
       if (callback) {
         callback()
+        closeCallbacks.delete(popupId)
       }
     })
   }
 
   return {
     /**
-     * Open a popup and optionally register close callback
+     * Open a popup (toggle mode: opens if closed, closes if open)
      */
     async open(
       options: PopupOpenOptions,
@@ -158,11 +144,6 @@ export function createPopupController() {
      * Get open popup IDs
      */
     getOpen: getOpenPopups,
-
-    /**
-     * Update popup position
-     */
-    updatePosition: updatePopupPosition,
 
     /**
      * Cleanup resources

@@ -163,10 +163,12 @@ export interface PopupOpenOptions {
   offsetY?: number
 }
 
-/** Popup info returned after creation */
+/** Popup info returned after open/toggle */
 export interface PopupInfo {
   id: string
   label: string
+  /** Whether the popup was closed (toggle mode) */
+  closed: boolean
 }
 
 /** Popup context for determining current window type */

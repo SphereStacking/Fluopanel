@@ -5,14 +5,13 @@ mod widgets;
 use clap::{Parser, Subcommand};
 use commands::{
     aerospace_focus_workspace, aerospace_get_focused_workspace, aerospace_get_workspaces,
-    clear_icon_cache, close_all_popups, close_popup_window, create_popup_window,
-    get_active_app_info, get_app_icon, get_app_icons, get_battery_info, get_bluetooth_info,
-    get_brightness_info, get_config, get_cpu_info, get_disk_info, get_media_info,
-    get_memory_info, get_monitors, get_network_info, get_open_popups, get_volume_info,
-    media_next, media_pause, media_play, media_previous, save_config, set_brightness,
-    set_mute, set_volume, set_window_geometry, set_window_position, set_window_size,
-    store_delete, store_get, store_keys, store_set, toggle_bluetooth, toggle_mute,
-    update_popup_position,
+    clear_icon_cache, close_all_popups, close_popup, get_active_app_info, get_app_icon,
+    get_app_icons, get_battery_info, get_bluetooth_info, get_brightness_info, get_config,
+    get_cpu_info, get_disk_info, get_media_info, get_memory_info, get_monitors,
+    get_network_info, get_open_popups, get_volume_info, media_next, media_pause, media_play,
+    media_previous, open_popup, save_config, set_brightness, set_mute, set_volume,
+    set_window_geometry, set_window_position, set_window_size, store_delete, store_get,
+    store_keys, store_set, toggle_bluetooth, toggle_mute,
 };
 use widgets::{
     close_widget_window, create_inline_widget_window, create_widget_window,
@@ -83,6 +82,7 @@ pub fn run() {
     // Normal app startup
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_nspanel::init())
         .invoke_handler(tauri::generate_handler![
             aerospace_get_workspaces,
             aerospace_get_focused_workspace,
@@ -133,11 +133,10 @@ pub fn run() {
             update_widget_position,
             hide_window,
             // Popup commands
-            create_popup_window,
-            close_popup_window,
+            open_popup,
+            close_popup,
             close_all_popups,
             get_open_popups,
-            update_popup_position,
             // Store commands
             store_set,
             store_get,

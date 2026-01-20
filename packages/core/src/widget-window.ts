@@ -10,17 +10,27 @@ const windowController = createWindowController()
 
 /**
  * Get the current widget context from URL parameters.
- * Returns 'coordinator' mode if no widget parameter is present.
+ * Returns 'coordinator' mode if no widget or popup parameter is present.
  */
 export function getWidgetContext(): WidgetContext {
   const params = new URLSearchParams(window.location.search)
   const widgetId = params.get('widget')
+  const popupId = params.get('popup')
 
   if (widgetId) {
     return {
       id: widgetId,
       label: `inline-widget-${widgetId}`,
       mode: 'widget',
+    }
+  }
+
+  // Popup windows are also not coordinators
+  if (popupId) {
+    return {
+      id: popupId,
+      label: `popup-${popupId}`,
+      mode: 'widget', // Treat popup as widget (not coordinator)
     }
   }
 
