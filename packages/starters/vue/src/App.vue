@@ -1,9 +1,20 @@
 <script setup lang="ts">
-import { Window, useCoordinator, Popover, usePopoverMode } from '@arcana/vue'
-import { executeShell } from '@arcana/core'
+import { ref } from 'vue'
+import { Window, useCoordinator, Popover, usePopoverMode, usePopover } from '@arcana/vue'
 
-const openConfig = () => {
-  executeShell('code ~/.config/arcana/config.json')
+// Settings menu popover
+const settingsMenuRef = ref<HTMLElement | null>(null)
+const settingsPopover = usePopover({
+  width: 200,
+  height: 190,
+  align: 'start',
+  offsetY: 8,
+})
+
+const toggleSettingsMenu = () => {
+  if (settingsMenuRef.value) {
+    settingsPopover.toggle('settings-menu', settingsMenuRef.value)
+  }
 }
 
 // Bar components
@@ -23,6 +34,7 @@ import YouTubeMusic from './components/YouTubeMusic.vue'
 import GitHubPRsPopover from './components/popovers/GitHubPRsPopover.vue'
 import GitHubNotificationsPopover from './components/popovers/GitHubNotificationsPopover.vue'
 import TestPopoverContent from './components/popovers/TestPopoverContent.vue'
+import SettingsMenuPopover from './components/popovers/SettingsMenuPopover.vue'
 
 const { isPopover } = usePopoverMode()
 
@@ -66,8 +78,9 @@ useCoordinator({ autoHide: !isPopover.value })
 
         <!-- Left section: Logo, Workspaces, Active App -->
         <div class="flex items-center gap-2 z-10">
-          <!-- Apple Logo -->
+          <!-- Apple Logo - Settings Menu -->
           <div
+            ref="settingsMenuRef"
             class="
               flex items-center justify-center w-7 h-7
               rounded-lg cursor-pointer
@@ -75,7 +88,7 @@ useCoordinator({ autoHide: !isPopover.value })
               hover:bg-[var(--widget-glass-hover)]
               group
             "
-            @click="openConfig"
+            @click="toggleSettingsMenu"
           >
             <span
               class="
@@ -126,6 +139,11 @@ useCoordinator({ autoHide: !isPopover.value })
   <!-- Test Popover -->
   <Popover id="test-popover">
     <TestPopoverContent />
+  </Popover>
+
+  <!-- Settings Menu Popover -->
+  <Popover id="settings-menu">
+    <SettingsMenuPopover />
   </Popover>
 </template>
 
