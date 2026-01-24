@@ -2,61 +2,61 @@
 import { onMounted, onUnmounted, watch, computed } from 'vue'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import {
-  createInlineWidgetWindow,
-  closeInlineWidgetWindow,
-  updateWidgetPosition,
+  createInlineWindow,
+  closeInlineWindow,
+  updateWindowPosition,
   isCoordinator,
-  getWidgetId,
-  type WidgetPosition,
-  type WidgetWindowConfig,
+  getWindowId,
+  type WindowPosition,
+  type WindowConfig,
 } from '@arcana/core'
-import { registerPendingWidget, markWidgetCompleted } from './composables/widgetRegistry'
+import { registerPendingWindow, markWindowCompleted } from './composables/windowRegistry'
 
 const props = defineProps<{
-  /** Unique widget identifier */
+  /** Unique window identifier */
   id: string
-  /** Widget positioning (bounding box) */
-  position: WidgetPosition
+  /** Window positioning (bounding box) */
+  position: WindowPosition
   /** Window configuration */
-  window?: WidgetWindowConfig
+  window?: WindowConfig
 }>()
 
-const currentWidgetId = getWidgetId()
+const currentWindowId = getWindowId()
 const isCoordinatorMode = isCoordinator()
 
-// Check if this Widget should render its content (when running as this widget)
+// Check if this Window should render its content (when running as this window)
 const shouldRenderContent = computed(() => {
-  return !isCoordinatorMode && currentWidgetId === props.id
+  return !isCoordinatorMode && currentWindowId === props.id
 })
 
-// Check if this Widget should create a window (when running as coordinator)
+// Check if this Window should create a window (when running as coordinator)
 const shouldCreateWindow = computed(() => {
   return isCoordinatorMode
 })
 
-// Register this widget as pending if in coordinator mode
+// Register this window as pending if in coordinator mode
 if (shouldCreateWindow.value) {
-  registerPendingWidget(props.id)
+  registerPendingWindow(props.id)
 }
 
 let unlisten: UnlistenFn | null = null
 
 async function createWindow() {
   try {
-    await createInlineWidgetWindow({
+    await createInlineWindow({
       id: props.id,
       position: props.position,
       window: props.window,
     })
   } catch {
     // Window might already exist (hot reload), update position instead
-    await updateWidgetPosition(props.id, props.position)
+    await updateWindowPosition(props.id, props.position)
   }
 }
 
 async function destroyWindow() {
   try {
-    await closeInlineWidgetWindow(props.id)
+    await closeInlineWindow(props.id)
   } catch {
     // Window might not exist, ignore
   }
@@ -66,12 +66,12 @@ onMounted(async () => {
   if (shouldCreateWindow.value) {
     await createWindow()
 
-    // Mark widget as completed in registry
-    markWidgetCompleted(props.id)
+    // Mark window as completed in registry
+    markWindowCompleted(props.id)
 
     // Subscribe to monitor changes for repositioning
     unlisten = await listen('monitor-changed', async () => {
-      await updateWidgetPosition(props.id, props.position)
+      await updateWindowPosition(props.id, props.position)
     })
   }
 })
@@ -88,7 +88,7 @@ watch(
   () => props.position,
   async (newPosition) => {
     if (shouldCreateWindow.value) {
-      await updateWidgetPosition(props.id, newPosition)
+      await updateWindowPosition(props.id, newPosition)
     }
   },
   { deep: true }
@@ -97,6 +97,6 @@ watch(
 
 <template>
   <!-- Coordinator mode: don't render anything (window is created via Tauri) -->
-  <!-- Widget mode: render slot content -->
+  <!-- Window mode: render slot content -->
   <slot v-if="shouldRenderContent" />
 </template>

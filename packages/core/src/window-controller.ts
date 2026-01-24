@@ -1,13 +1,13 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import type { WidgetPosition, MonitorInfo } from './types'
+import type { WindowPosition, MonitorInfo } from './types'
 
 export interface WindowController {
   /** Get all available monitors */
   getMonitors(): Promise<MonitorInfo[]>
 
   /** Update position of a specific window */
-  updateWindowPosition(label: string, position: WidgetPosition): Promise<void>
+  updateWindowPosition(label: string, position: WindowPosition): Promise<void>
 
   /** Subscribe to monitor changes */
   onMonitorChange(callback: () => void): Promise<UnlistenFn>
@@ -23,8 +23,8 @@ export function createWindowController(): WindowController {
       return invoke<MonitorInfo[]>('get_monitors')
     },
 
-    async updateWindowPosition(label: string, position: WidgetPosition): Promise<void> {
-      await invoke('update_widget_position', {
+    async updateWindowPosition(label: string, position: WindowPosition): Promise<void> {
+      await invoke('update_window_position', {
         label,
         position: {
           monitor: position.monitor,

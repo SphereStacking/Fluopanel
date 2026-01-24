@@ -1,11 +1,13 @@
-use super::discovery::{WidgetManifest, WidgetType};
+use super::discovery::{WindowManifest, WindowType};
 use serde::Deserialize;
 use tauri::{command, AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
-/// Widget position configuration (bounding box)
+#[cfg(target_os = "macos")]
+
+/// Window position configuration (bounding box)
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct WidgetPosition {
+pub struct WindowPosition {
     pub monitor: Option<String>,
     pub top: Option<i32>,
     pub bottom: Option<i32>,
@@ -24,7 +26,7 @@ struct WindowGeometry {
 }
 
 /// Validate position configuration
-fn validate_position(position: &WidgetPosition) -> Result<(), String> {
+fn validate_position(position: &WindowPosition) -> Result<(), String> {
     // Horizontal: need (left + right) OR (left + width) OR (right + width)
     let has_horizontal = match (position.left, position.right, position.width) {
         (Some(_), Some(_), _) => true,      // left + right
@@ -54,7 +56,7 @@ fn validate_position(position: &WidgetPosition) -> Result<(), String> {
 
 /// Calculate window geometry from position config and monitor info
 fn calculate_geometry(
-    position: &WidgetPosition,
+    position: &WindowPosition,
     monitor_x: i32,
     monitor_y: i32,
     monitor_width: u32,
@@ -132,24 +134,24 @@ fn get_monitor_info(app: &AppHandle, monitor_name: Option<&str>) -> Result<(i32,
     ))
 }
 
-/// Create an inline widget window (for <Widget> component pattern)
+/// Create an inline window (for <Window> component pattern)
 #[command]
-pub async fn create_inline_widget_window(
+pub async fn create_inline_window(
     app: AppHandle,
-    widget_id: String,
+    window_id: String,
     url: String,
     transparent: bool,
-    always_on_top: bool,
+    _always_on_top: bool,
     decorations: bool,
     resizable: bool,
-    skip_taskbar: bool,
-    position: WidgetPosition,
+    _skip_taskbar: bool,
+    position: WindowPosition,
 ) -> Result<(), String> {
-    let label = format!("inline-widget-{}", widget_id);
+    let label = format!("inline-window-{}", window_id);
 
     // Check if window already exists
     if app.get_webview_window(&label).is_some() {
-        return Err(format!("Inline widget window '{}' already exists", label));
+        return Err(format!("Inline window '{}' already exists", label));
     }
 
     // Validate position constraints
@@ -172,29 +174,33 @@ pub async fn create_inline_widget_window(
         url.parse().map_err(|e| format!("Invalid URL: {}", e))?
     );
 
-    let builder = WebviewWindowBuilder::new(&app, &label, webview_url)
-        .title(&widget_id)
+    eprintln!("[Window] Creating window: {}", label);
+
+    let _window = WebviewWindowBuilder::new(&app, &label, webview_url)
+        .title(&window_id)
         .decorations(decorations)
         .transparent(transparent)
-        .always_on_top(always_on_top)
-        .skip_taskbar(skip_taskbar)
+        .always_on_top(_always_on_top)
+        .skip_taskbar(_skip_taskbar)
         .resizable(resizable)
         .visible(false)
         .focused(false)
         .position(geometry.x as f64, geometry.y as f64)
-        .inner_size(geometry.width as f64, geometry.height as f64);
+        .inner_size(geometry.width as f64, geometry.height as f64)
+        .build()
+        .map_err(|e| e.to_string())?;
 
-    let _window = builder.build().map_err(|e| e.to_string())?;
+    eprintln!("[Window] Window created: {}", label);
 
     Ok(())
 }
 
-/// Update widget window position
+/// Update window position
 #[command]
-pub fn update_widget_position(
+pub fn update_window_position(
     app: AppHandle,
     label: String,
-    position: WidgetPosition,
+    position: WindowPosition,
 ) -> Result<(), String> {
     let window = app
         .get_webview_window(&label)
@@ -249,19 +255,19 @@ pub fn hide_window(app: AppHandle, label: String) -> Result<(), String> {
     }
 }
 
-/// Create a new widget window
+/// Create a new window from manifest
 #[command]
-pub async fn create_widget_window(
+pub async fn create_window(
     app: AppHandle,
-    widget_id: String,
+    window_id: String,
     instance_id: String,
-    manifest: WidgetManifest,
+    manifest: WindowManifest,
 ) -> Result<(), String> {
-    let label = format!("widget-{}-{}", widget_id, instance_id);
+    let label = format!("window-{}-{}", window_id, instance_id);
 
     // Check if window already exists
     if app.get_webview_window(&label).is_some() {
-        return Err(format!("Widget window '{}' already exists", label));
+        return Err(format!("Window '{}' already exists", label));
     }
 
     // Determine URL: dev mode or production
@@ -275,14 +281,14 @@ pub async fn create_widget_window(
                 .map_err(|e| format!("Invalid dev URL: {}", e))?,
         )
     } else {
-        // Custom protocol: arcana://widget/{widget_id}/{entry}
-        let url_str = format!("arcana://widget/{}/{}", widget_id, manifest.entry);
+        // Custom protocol: arcana://window/{window_id}/{entry}
+        let url_str = format!("arcana://window/{}/{}", window_id, manifest.entry);
         WebviewUrl::CustomProtocol(url_str.parse().map_err(|e| format!("Invalid URL: {}", e))?)
     };
 
-    // Get window config with defaults based on widget type
+    // Get window config with defaults based on window type
     let window_config = manifest.window.as_ref();
-    let is_bar = matches!(manifest.widget_type, WidgetType::Bar);
+    let is_bar = matches!(manifest.window_type, WindowType::Bar);
 
     let transparent = window_config
         .and_then(|c| c.transparent)
@@ -319,34 +325,34 @@ pub async fn create_widget_window(
     Ok(())
 }
 
-/// Close a widget window
+/// Close a window
 #[command]
-pub fn close_widget_window(app: AppHandle, label: String) -> Result<(), String> {
+pub fn close_window(app: AppHandle, label: String) -> Result<(), String> {
     if let Some(window) = app.get_webview_window(&label) {
         window.close().map_err(|e| e.to_string())?;
         Ok(())
     } else {
-        Err(format!("Widget window '{}' not found", label))
+        Err(format!("Window '{}' not found", label))
     }
 }
 
-/// Get all active widget windows
+/// Get all active windows
 #[command]
-pub fn get_widget_windows(app: AppHandle) -> Vec<String> {
+pub fn get_windows(app: AppHandle) -> Vec<String> {
     app.webview_windows()
         .keys()
-        .filter(|k| k.starts_with("widget-"))
+        .filter(|k| k.starts_with("window-") || k.starts_with("inline-window-"))
         .cloned()
         .collect()
 }
 
-/// Show a widget window (after positioning is applied)
+/// Show a window (after positioning is applied)
 #[command]
-pub fn show_widget_window(app: AppHandle, label: String) -> Result<(), String> {
+pub fn show_window(app: AppHandle, label: String) -> Result<(), String> {
     if let Some(window) = app.get_webview_window(&label) {
         window.show().map_err(|e| e.to_string())?;
         Ok(())
     } else {
-        Err(format!("Widget window '{}' not found", label))
+        Err(format!("Window '{}' not found", label))
     }
 }
