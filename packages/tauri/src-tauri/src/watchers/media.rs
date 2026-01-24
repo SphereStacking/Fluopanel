@@ -15,8 +15,8 @@ use tauri::{AppHandle, Emitter, async_runtime};
 
 static INIT: Once = Once::new();
 
-// Check interval (2 seconds - responsive for media controls)
-const MEDIA_CHECK_INTERVAL_SECS: u64 = 2;
+// Check interval (5 seconds - balanced between responsiveness and CPU usage)
+const MEDIA_CHECK_INTERVAL_SECS: u64 = 5;
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
