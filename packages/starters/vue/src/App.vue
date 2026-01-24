@@ -61,11 +61,11 @@ useCoordinator({ autoHide: !isPopover.value })
 
         <!-- Left section: Logo, Workspaces, Active App -->
         <div class="flex items-center gap-2 z-10">
-          <!-- Apple Logo with holographic effect -->
+          <!-- Apple Logo -->
           <div
             class="
               flex items-center justify-center w-7 h-7
-              rounded-lg cursor-pointer
+              rounded-lg
               transition-all duration-300
               hover:bg-[var(--widget-glass-hover)]
               group

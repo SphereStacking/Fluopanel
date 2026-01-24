@@ -5,9 +5,9 @@ mod windows;
 use clap::{Parser, Subcommand};
 use commands::{
     aerospace_focus_workspace, aerospace_get_focused_workspace, aerospace_get_workspaces,
-    clear_icon_cache, close_all_popovers, close_popover, get_active_app_info, get_app_icon,
-    get_app_icons, get_battery_info, get_bluetooth_info, get_brightness_info, get_config,
-    get_cpu_info, get_disk_info, get_media_info, get_memory_info, get_monitors,
+    clear_icon_cache, close_all_popovers, close_popover, execute_shell, get_active_app_info,
+    get_app_icon, get_app_icons, get_battery_info, get_bluetooth_info, get_brightness_info,
+    get_config, get_cpu_info, get_disk_info, get_media_info, get_memory_info, get_monitors,
     get_network_info, get_open_popovers, get_volume_info, media_next, media_pause, media_play,
     media_previous, open_popover, save_config, set_brightness, set_mute, set_volume,
     set_window_geometry, set_window_position, set_window_size, store_delete, store_get,
@@ -150,6 +150,8 @@ pub fn run() {
             store_get,
             store_delete,
             store_keys,
+            // Shell commands
+            execute_shell,
         ])
         .register_uri_scheme_protocol("arcana", |_ctx, request| {
             let path = request.uri().path();

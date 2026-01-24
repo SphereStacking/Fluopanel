@@ -11,7 +11,7 @@
     "packages/starters/*"
   ],
   "scripts": {
-    "dev": "concurrently -n libs,tauri,vue -c blue,yellow,green \"npm run dev:libs\" \"npm run dev:tauri\" \"npm run dev:vue\"",
+    "dev": "pkill -f 'arcana' || true; lsof -ti:1420 | xargs kill -9 2>/dev/null || true; concurrently -n libs,tauri,vue -c blue,yellow,green \"npm run dev:libs\" \"npm run dev:tauri\" \"npm run dev:vue\"",
     "dev:tauri": "npm run tauri:dev -w @arcana/tauri",
     "dev:vue": "npm run dev -w @arcana/starter-vue",
     "dev:libs": "concurrently -n core,providers \"npm run dev:core\" \"npm run dev:providers\"",
