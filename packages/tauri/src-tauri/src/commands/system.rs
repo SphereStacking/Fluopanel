@@ -202,7 +202,8 @@ pub fn get_network_info() -> Result<NetworkInfo, String> {
     })
 }
 
-fn get_wifi_info() -> Option<(String, Option<i32>)> {
+/// Get WiFi SSID and signal strength
+pub fn get_wifi_info() -> Option<(String, Option<i32>)> {
     use std::process::Command;
 
     // Use networksetup to get current WiFi network
