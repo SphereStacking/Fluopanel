@@ -12,6 +12,7 @@ import Disk from './Disk.vue'
 import Brightness from './Brightness.vue'
 import Bluetooth from './Bluetooth.vue'
 import GitHub from './GitHub.vue'
+import TestPopover from './TestPopover.vue'
 import YouTubeMusic from './YouTubeMusic.vue'
 </script>
 
@@ -80,11 +81,13 @@ import YouTubeMusic from './YouTubeMusic.vue'
 
       <!-- Right section: System indicators -->
       <div class="flex items-center gap-1 z-10">
-        <GitHub />
+        <!-- <GitHub /> -->
+        <TestPopover />
+        <TestPopover />
         <div class="w-px h-4 bg-[var(--glass-border)] mx-1" />
-        <Volume />
-        <Brightness />
-        <Network />
+        <!-- <Volume /> -->
+        <!-- <Brightness /> -->
+        <!-- <Network /> -->
         <div class="w-px h-4 bg-[var(--glass-border)] mx-1" />
         <Disk />
         <Cpu />

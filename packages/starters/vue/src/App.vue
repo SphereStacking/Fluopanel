@@ -1,34 +1,40 @@
 <script setup lang="ts">
-import { Widget, useCoordinator, Popup, usePopupMode } from '@arcana/vue'
+import { Window, useCoordinator, Popover, usePopoverMode } from '@arcana/vue'
 import Bar from './components/Bar.vue'
-import GitHubIssuesPopup from './components/popups/GitHubIssuesPopup.vue'
-import GitHubPRsPopup from './components/popups/GitHubPRsPopup.vue'
-import GitHubNotificationsPopup from './components/popups/GitHubNotificationsPopup.vue'
+import GitHubIssuesPopover from './components/popovers/GitHubIssuesPopover.vue'
+import GitHubPRsPopover from './components/popovers/GitHubPRsPopover.vue'
+import GitHubNotificationsPopover from './components/popovers/GitHubNotificationsPopover.vue'
+import TestPopoverContent from './components/popovers/TestPopoverContent.vue'
 
-const { isPopup } = usePopupMode()
+const { isPopover } = usePopoverMode()
 
-// Coordinator mode: auto-hide the main window after widgets are created
-// Don't auto-hide if this is a popup window (popup needs to stay visible)
-useCoordinator({ autoHide: !isPopup.value })
+// Coordinator mode: auto-hide the main window after windows are created
+// Don't auto-hide if this is a popover window (popover needs to stay visible)
+useCoordinator({ autoHide: !isPopover.value })
 </script>
 
 <template>
-  <!-- Main bar widget (only created in coordinator mode) -->
-  <Widget
+  <!-- Main bar window (only created in coordinator mode) -->
+  <Window
     id="bar"
     :position="{ top: 9, left: 20, right: 20, height: 60 }"
   >
     <Bar />
-  </Widget>
+  </Window>
 
-  <!-- GitHub Popups -->
-  <Popup id="github-issues">
-    <GitHubIssuesPopup />
-  </Popup>
-  <Popup id="github-prs">
-    <GitHubPRsPopup />
-  </Popup>
-  <Popup id="github-notifications">
-    <GitHubNotificationsPopup />
-  </Popup>
+  <!-- GitHub Popovers -->
+  <!-- <Popover id="github-issues">
+    <GitHubIssuesPopover />
+  </Popover> -->
+  <Popover id="github-prs">
+    <GitHubPRsPopover />
+  </Popover>
+  <Popover id="github-notifications">
+    <GitHubNotificationsPopover />
+  </Popover>
+
+  <!-- Test Popover -->
+  <Popover id="test-popover">
+    <TestPopoverContent />
+  </Popover>
 </template>
