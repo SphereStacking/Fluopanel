@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { Window, useCoordinator, Popover, usePopoverMode } from '@arcana/vue'
+import { executeShell } from '@arcana/core'
+
+const openConfig = () => {
+  executeShell('code ~/.config/arcana/config.json')
+}
 
 // Bar components
 import Workspaces from './components/Workspaces.vue'
@@ -65,11 +70,12 @@ useCoordinator({ autoHide: !isPopover.value })
           <div
             class="
               flex items-center justify-center w-7 h-7
-              rounded-lg
+              rounded-lg cursor-pointer
               transition-all duration-300
               hover:bg-[var(--widget-glass-hover)]
               group
             "
+            @click="openConfig"
           >
             <span
               class="
