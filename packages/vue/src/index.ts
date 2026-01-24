@@ -1,10 +1,10 @@
 // Components
-export { default as Widget } from './Widget.vue'
-export { default as Popup } from './Popup.vue'
+export { default as Window } from './Window.vue'
+export { default as Popover } from './Popover.vue'
 
 // Composables
-export { useWidgetMode, useCoordinator } from './composables/useWidgetMode'
-export { usePopup, usePopupMode, type UsePopupOptions, type UsePopupReturn, type PopupAnchor, type PopupAlign } from './composables/usePopup'
+export { useWindowMode, useCoordinator } from './composables/useWindowMode'
+export { usePopover, usePopoverMode, type UsePopoverOptions, type UsePopoverReturn, type PopoverAnchor, type PopoverAlign } from './composables/usePopover'
 export { useSharedStore, type UseSharedStoreReturn } from './composables/useSharedStore'
 
 // Provider composables

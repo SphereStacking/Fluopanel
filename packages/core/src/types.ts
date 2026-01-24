@@ -1,6 +1,6 @@
-// Widget positioning (all values in pixels)
+// Window positioning (all values in pixels)
 // Position defines a bounding box on screen
-export interface WidgetPosition {
+export interface WindowPosition {
   monitor?: string          // Monitor name or 'primary'
   top?: number              // Pixels from top edge
   bottom?: number           // Pixels from bottom edge
@@ -10,8 +10,8 @@ export interface WidgetPosition {
   height?: number           // Explicit height (if top+bottom not specified)
 }
 
-// Widget window configuration
-export interface WidgetWindowConfig {
+// Window configuration
+export interface WindowConfig {
   transparent?: boolean     // default: true
   alwaysOnTop?: boolean     // default: true (bar), false (floating)
   resizable?: boolean       // default: false (bar), true (floating)
@@ -20,27 +20,27 @@ export interface WidgetWindowConfig {
   clickThrough?: boolean    // Ignore mouse events (for overlays)
 }
 
-// Widget manifest (widget.json schema)
-export interface WidgetManifest {
+// Window manifest (window.json schema)
+export interface WindowManifest {
   id: string                // Unique identifier
   name: string              // Display name
   version: string           // Semantic version
 
-  type: 'bar' | 'floating'  // Widget type
+  type: 'bar' | 'floating'  // Window type
 
-  position: WidgetPosition
-  window?: WidgetWindowConfig
+  position: WindowPosition
+  window?: WindowConfig
 
   entry: string             // Entry point (default: 'index.html')
   devUrl?: string           // Development server URL
 }
 
-// Widget instance (loaded widget)
-export interface WidgetInstance {
-  widgetId: string          // References WidgetManifest.id
+// Window instance (loaded window)
+export interface WindowInstance {
+  windowId: string          // References WindowManifest.id
   instanceId: string        // Unique instance ID (for duplicates)
   enabled: boolean
-  overrides?: Partial<WidgetPosition>
+  overrides?: Partial<WindowPosition>
 }
 
 // Monitor information
@@ -87,7 +87,7 @@ export interface AppConfig {
 
 // Global Arcana configuration
 export interface ArcanaConfig {
-  widgets: WidgetInstance[]
+  windows: WindowInstance[]
   settings: {
     hotReload: boolean
     devMode: boolean
@@ -99,82 +99,82 @@ export interface ArcanaConfig {
 }
 
 // ============================================
-// Inline Widget Types (for <Widget> component)
+// Inline Window Types (for <Window> component)
 // ============================================
 
-/** Options for creating an inline widget window */
-export interface InlineWidgetOptions {
-  /** Unique widget ID (used as window label) */
+/** Options for creating an inline window */
+export interface InlineWindowOptions {
+  /** Unique window ID (used as window label) */
   id: string
   /** CSS-like positioning */
-  position: WidgetPosition
+  position: WindowPosition
   /** Window configuration */
-  window?: WidgetWindowConfig
-  /** URL to load (defaults to current page with ?widget=id) */
+  window?: WindowConfig
+  /** URL to load (defaults to current page with ?window=id) */
   url?: string
 }
 
-/** Runtime context passed to widget components */
-export interface WidgetContext {
-  /** Widget ID */
+/** Runtime context passed to window components */
+export interface WindowContext {
+  /** Window ID */
   id: string
   /** Window label (for IPC) */
   label: string
-  /** Whether running as coordinator (parent) or widget (child window) */
-  mode: 'coordinator' | 'widget'
+  /** Whether running as coordinator (parent) or window (child window) */
+  mode: 'coordinator' | 'window'
 }
 
-/** Widget registration for coordinator mode */
-export interface WidgetRegistration {
+/** Window registration for coordinator mode */
+export interface WindowRegistration {
   id: string
   component: string  // Component name for dynamic import
-  position: WidgetPosition
-  window?: WidgetWindowConfig
+  position: WindowPosition
+  window?: WindowConfig
 }
 
 // ============================================
-// Popup Types
+// Popover Types
 // ============================================
 
-/** Popup alignment relative to anchor element */
-export type PopupAlign = 'start' | 'center' | 'end'
+/** Popover alignment relative to anchor element */
+export type PopoverAlign = 'start' | 'center' | 'end'
 
-/** Popup anchor position (from trigger element's getBoundingClientRect) */
-export interface PopupAnchor {
+/** Popover anchor position (from trigger element's getBoundingClientRect) */
+export interface PopoverAnchor {
   x: number
   y: number
   width: number
   height: number
 }
 
-/** Options for opening a popup window */
-export interface PopupOpenOptions {
-  /** Unique popup ID */
+/** Options for opening a popover window */
+export interface PopoverOpenOptions {
+  /** Unique popover ID */
   id: string
   /** Anchor element position */
-  anchor: PopupAnchor
-  /** Popup width in pixels */
+  anchor: PopoverAnchor
+  /** Popover width in pixels */
   width: number
-  /** Popup height in pixels */
+  /** Popover height in pixels */
   height: number
   /** Alignment relative to anchor (default: 'center') */
-  align?: PopupAlign
+  align?: PopoverAlign
   /** Vertical offset from anchor (default: 8) */
   offsetY?: number
 }
 
-/** Popup info returned after open/toggle */
-export interface PopupInfo {
+/** Popover info returned after open/toggle */
+export interface PopoverInfo {
   id: string
   label: string
-  /** Whether the popup was closed (toggle mode) */
+  /** Whether the popover was closed (toggle mode) */
   closed: boolean
 }
 
-/** Popup context for determining current window type */
-export interface PopupContext {
-  /** Popup ID (from URL parameter) */
+/** Popover context for determining current window type */
+export interface PopoverContext {
+  /** Popover ID (from URL parameter) */
   id: string | null
-  /** Whether current window is a popup */
-  isPopup: boolean
+  /** Whether current window is a popover */
+  isPopover: boolean
 }
