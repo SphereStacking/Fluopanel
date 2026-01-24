@@ -1,22 +1,22 @@
 mod commands;
 mod ipc;
-mod widgets;
+mod windows;
 
 use clap::{Parser, Subcommand};
 use commands::{
     aerospace_focus_workspace, aerospace_get_focused_workspace, aerospace_get_workspaces,
-    clear_icon_cache, close_all_popups, close_popup, get_active_app_info, get_app_icon,
+    clear_icon_cache, close_all_popovers, close_popover, get_active_app_info, get_app_icon,
     get_app_icons, get_battery_info, get_bluetooth_info, get_brightness_info, get_config,
     get_cpu_info, get_disk_info, get_media_info, get_memory_info, get_monitors,
-    get_network_info, get_open_popups, get_volume_info, media_next, media_pause, media_play,
-    media_previous, open_popup, save_config, set_brightness, set_mute, set_volume,
+    get_network_info, get_open_popovers, get_volume_info, media_next, media_pause, media_play,
+    media_previous, open_popover, save_config, set_brightness, set_mute, set_volume,
     set_window_geometry, set_window_position, set_window_size, store_delete, store_get,
     store_keys, store_set, toggle_bluetooth, toggle_mute,
 };
-use widgets::{
-    close_widget_window, create_inline_widget_window, create_widget_window,
-    discover_widgets, get_widget_manifest, get_widget_windows, get_widgets_dir,
-    hide_window, show_widget_window, update_widget_position,
+use windows::{
+    close_window, create_inline_window, create_window,
+    discover_windows, get_window_manifest, get_windows, get_windows_dir,
+    hide_window, show_window, update_window_position,
 };
 use once_cell::sync::OnceCell;
 use std::path::PathBuf;
@@ -80,9 +80,17 @@ pub fn run() {
     }
 
     // Normal app startup
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_nspanel::init())
+        .plugin(tauri_nspanel::init());
+
+    // MCP Bridge plugin (debug builds only)
+    #[cfg(debug_assertions)]
+    {
+        builder = builder.plugin(tauri_plugin_mcp_bridge::init());
+    }
+
+    builder
         .invoke_handler(tauri::generate_handler![
             aerospace_get_workspaces,
             aerospace_get_focused_workspace,
@@ -121,22 +129,22 @@ pub fn run() {
             // Bluetooth commands
             get_bluetooth_info,
             toggle_bluetooth,
-            // Widget commands
-            discover_widgets,
-            get_widget_manifest,
-            create_widget_window,
-            close_widget_window,
-            get_widget_windows,
-            show_widget_window,
-            // Inline widget commands
-            create_inline_widget_window,
-            update_widget_position,
+            // Window commands
+            discover_windows,
+            get_window_manifest,
+            create_window,
+            close_window,
+            get_windows,
+            show_window,
+            // Inline window commands
+            create_inline_window,
+            update_window_position,
             hide_window,
-            // Popup commands
-            open_popup,
-            close_popup,
-            close_all_popups,
-            get_open_popups,
+            // Popover commands
+            open_popover,
+            close_popover,
+            close_all_popovers,
+            get_open_popovers,
             // Store commands
             store_set,
             store_get,
@@ -151,14 +159,14 @@ pub fn run() {
                 path
             };
 
-            // Check if this is a widget request: /widget/{widget_id}/{file_path}
-            let file_path = if path.starts_with("/widget/") {
+            // Check if this is a window request: /window/{window_id}/{file_path}
+            let file_path = if path.starts_with("/window/") {
                 let parts: Vec<&str> = path[8..].splitn(2, '/').collect();
                 if parts.len() >= 1 {
-                    let widget_id = parts[0];
+                    let window_id = parts[0];
                     let file = if parts.len() >= 2 { parts[1] } else { "index.html" };
-                    get_widgets_dir()
-                        .map(|d| d.join(widget_id).join(file))
+                    get_windows_dir()
+                        .map(|d| d.join(window_id).join(file))
                         .unwrap_or_default()
                 } else {
                     PathBuf::new()

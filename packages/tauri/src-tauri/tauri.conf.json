@@ -23,6 +23,7 @@
     "createUpdaterArtifacts": false
   },
   "app": {
+    "withGlobalTauri": true,
     "macOSPrivateApi": true,
     "windows": [
       {
