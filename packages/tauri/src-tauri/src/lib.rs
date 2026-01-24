@@ -219,6 +219,10 @@ pub fn run() {
             // Start IPC server for CLI commands
             ipc::start_server(app.handle().clone());
 
+            // Initialize hover focus (autoraise) feature
+            #[cfg(target_os = "macos")]
+            windows::hover_focus::init(app.handle().clone());
+
             // Hide from Dock (set as accessory app)
             #[cfg(target_os = "macos")]
             {

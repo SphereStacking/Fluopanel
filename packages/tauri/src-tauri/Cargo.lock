@@ -103,6 +103,7 @@ version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "battery",
+ "block2 0.6.2",
  "clap",
  "core-foundation-sys 0.8.7",
  "coreaudio-sys",
