@@ -8,11 +8,11 @@ use objc2::{define_class, msg_send, sel, ClassType};
 use objc2_app_kit::NSWorkspace;
 use objc2_foundation::{NSNotification, NSNotificationName, NSObject, NSObjectProtocol};
 use serde::Serialize;
-use std::sync::Once;
+use std::sync::{Once, OnceLock};
 use tauri::{AppHandle, Emitter};
 
 static INIT: Once = Once::new();
-static mut APP_HANDLE: Option<AppHandle> = None;
+static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,9 +26,7 @@ pub struct ActiveAppEvent {
 pub fn register(app_handle: AppHandle) -> Result<(), String> {
     INIT.call_once(|| {
         // Store app handle for callback
-        unsafe {
-            APP_HANDLE = Some(app_handle);
-        }
+        let _ = APP_HANDLE.set(app_handle);
 
         // Define observer class
         define_class!(
@@ -41,8 +39,8 @@ pub fn register(app_handle: AppHandle) -> Result<(), String> {
 
             impl ActiveAppObserver {
                 #[unsafe(method(appDidActivate:))]
-                fn app_did_activate(&self, notification: &NSNotification) {
-                    if let Some(handle) = unsafe { APP_HANDLE.as_ref() } {
+                fn app_did_activate(&self, _notification: &NSNotification) {
+                    if let Some(handle) = APP_HANDLE.get() {
                         // Get the activated app info from notification userInfo
                         let event = get_frontmost_app_info();
                         let _ = handle.emit("active-app-changed", event);

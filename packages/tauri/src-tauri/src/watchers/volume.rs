@@ -7,11 +7,11 @@ use crate::commands::audio;
 use coreaudio_sys::*;
 use serde::Serialize;
 use std::os::raw::c_void;
-use std::sync::Once;
+use std::sync::{Once, OnceLock};
 use tauri::{AppHandle, Emitter};
 
 static INIT: Once = Once::new();
-static mut APP_HANDLE: Option<AppHandle> = None;
+static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -28,7 +28,7 @@ extern "C" fn volume_listener_callback(
     _addresses: *const AudioObjectPropertyAddress,
     _client_data: *mut c_void,
 ) -> OSStatus {
-    if let Some(handle) = unsafe { APP_HANDLE.as_ref() } {
+    if let Some(handle) = APP_HANDLE.get() {
         let event = get_current_volume_info();
         let _ = handle.emit("volume-changed", event);
     }
@@ -38,9 +38,7 @@ extern "C" fn volume_listener_callback(
 /// Register the volume watcher
 pub fn register(app_handle: AppHandle) -> Result<(), String> {
     INIT.call_once(|| {
-        unsafe {
-            APP_HANDLE = Some(app_handle);
-        }
+        let _ = APP_HANDLE.set(app_handle);
 
         // Get default output device
         if let Ok(device_id) = audio::get_default_output_device() {
@@ -138,7 +136,7 @@ extern "C" fn device_changed_callback(
     }
 
     // Emit volume changed event for the new device
-    if let Some(handle) = unsafe { APP_HANDLE.as_ref() } {
+    if let Some(handle) = APP_HANDLE.get() {
         let event = get_current_volume_info();
         let _ = handle.emit("volume-changed", event);
     }

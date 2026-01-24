@@ -4,12 +4,12 @@
 //! Emits `battery-changed` event when battery level or charging state changes.
 
 use serde::Serialize;
-use std::sync::Once;
+use std::sync::{Once, OnceLock};
 use std::thread;
 use tauri::{AppHandle, Emitter};
 
 static INIT: Once = Once::new();
-static mut APP_HANDLE: Option<AppHandle> = None;
+static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,7 +47,7 @@ extern "C" {
 
 /// Callback function for power source changes
 extern "C" fn power_source_callback(_context: *mut std::ffi::c_void) {
-    if let Some(handle) = unsafe { APP_HANDLE.as_ref() } {
+    if let Some(handle) = APP_HANDLE.get() {
         if let Some(event) = get_battery_info() {
             let _ = handle.emit("battery-changed", event);
         }
@@ -57,9 +57,7 @@ extern "C" fn power_source_callback(_context: *mut std::ffi::c_void) {
 /// Register the battery watcher
 pub fn register(app_handle: AppHandle) -> Result<(), String> {
     INIT.call_once(|| {
-        unsafe {
-            APP_HANDLE = Some(app_handle);
-        }
+        let _ = APP_HANDLE.set(app_handle);
 
         // Spawn a thread to run the CFRunLoop
         thread::spawn(|| {
