@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
-import { usePopup } from '@arcana/vue'
+import { usePopover } from '@arcana/vue'
 import { useGitHub } from '../composables/useGitHub'
 
 // GitHub data management
@@ -12,42 +12,46 @@ const issuesTriggerRef = ref<HTMLElement | null>(null)
 const prsTriggerRef = ref<HTMLElement | null>(null)
 const notificationsTriggerRef = ref<HTMLElement | null>(null)
 
-// Popup management - separate popup for each type
-const issuesPopup = usePopup({
+// Popover management - separate popover for each type
+// exclusive: true ensures only one popover is open at a time
+const issuesPopover = usePopover({
   width: 340,
   height: 420,
   align: 'center',
   offsetY: 8,
+  exclusive: true,
 })
-const prsPopup = usePopup({
+const prsPopover = usePopover({
   width: 340,
   height: 420,
   align: 'center',
   offsetY: 8,
+  exclusive: true,
 })
-const notificationsPopup = usePopup({
+const notificationsPopover = usePopover({
   width: 340,
   height: 420,
   align: 'center',
   offsetY: 8,
+  exclusive: true,
 })
 
 // Click handlers
 async function openIssues() {
   if (issuesTriggerRef.value) {
-    await issuesPopup.toggle('github-issues', issuesTriggerRef.value)
+    await issuesPopover.toggle('github-issues', issuesTriggerRef.value)
   }
 }
 
 async function openPRs() {
   if (prsTriggerRef.value) {
-    await prsPopup.toggle('github-prs', prsTriggerRef.value)
+    await prsPopover.toggle('github-prs', prsTriggerRef.value)
   }
 }
 
 async function openNotifications() {
   if (notificationsTriggerRef.value) {
-    await notificationsPopup.toggle('github-notifications', notificationsTriggerRef.value)
+    await notificationsPopover.toggle('github-notifications', notificationsTriggerRef.value)
   }
 }
 
