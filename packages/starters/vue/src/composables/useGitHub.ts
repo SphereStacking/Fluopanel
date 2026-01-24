@@ -102,12 +102,8 @@ const store = createSharedStore<GitHubState>(STORE_KEY)
 const token = import.meta.env.VITE_GITHUB_TOKEN as string | undefined
 const octokit = token ? new Octokit({ auth: token }) : null
 
-// Polling state (module level)
-let pollIntervalId: ReturnType<typeof setInterval> | null = null
-let pollingRefCount = 0
-
-// Cache duration (1 minute)
-const CACHE_DURATION = 60 * 1000
+// Cache duration (5 minutes) - matches Raycast's on-demand approach
+const CACHE_DURATION = 5 * 60 * 1000
 
 // Default state
 const defaultState: GitHubState = {
@@ -150,10 +146,6 @@ export interface UseGitHubReturn {
   refresh: () => Promise<void>
   markNotificationRead: (id: string) => Promise<void>
   getNotificationUrl: (notification: GitHubNotification) => string
-
-  // Polling control
-  startPolling: () => void
-  stopPolling: () => void
 }
 
 /**
@@ -333,26 +325,6 @@ export function useGitHub(): UseGitHubReturn {
     return apiUrlToHtmlUrl(notification.subject.url, notification.repository.html_url)
   }
 
-  // Start polling (5 minute interval)
-  function startPolling(): void {
-    pollingRefCount++
-    if (pollIntervalId) return
-    fetchIfStale()
-    pollIntervalId = setInterval(() => {
-      fetchData()
-    }, 5 * 60 * 1000)
-  }
-
-  // Stop polling
-  function stopPolling(): void {
-    pollingRefCount--
-    if (pollingRefCount <= 0 && pollIntervalId) {
-      clearInterval(pollIntervalId)
-      pollIntervalId = null
-      pollingRefCount = 0
-    }
-  }
-
   return {
     // Sectioned data
     issues: computed(() => state.value.issues),
@@ -387,9 +359,5 @@ export function useGitHub(): UseGitHubReturn {
     refresh,
     markNotificationRead,
     getNotificationUrl,
-
-    // Polling control
-    startPolling,
-    stopPolling,
   }
 }

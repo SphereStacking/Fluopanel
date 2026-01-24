@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import { usePopover } from '@arcana/vue'
 import { useGitHub } from '../composables/useGitHub'
@@ -54,15 +54,6 @@ async function openNotifications() {
     await notificationsPopover.toggle('github-notifications', notificationsTriggerRef.value)
   }
 }
-
-// Start/stop polling based on component lifecycle
-onMounted(() => {
-  github.startPolling()
-})
-
-onUnmounted(() => {
-  github.stopPolling()
-})
 
 // Color states
 const issueColor = computed(() => {
