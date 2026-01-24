@@ -15,9 +15,12 @@ export function useAerospaceProvider() {
     const uncached = [...appNames].filter((app) => !appIcons.value.has(app))
     if (uncached.length > 0) {
       const icons = await provider.getAppIcons(uncached)
+      // Create new Map to trigger Vue reactivity
+      const newMap = new Map(appIcons.value)
       icons.forEach((icon) => {
-        appIcons.value.set(icon.app, icon.icon)
+        newMap.set(icon.app, icon.icon)
       })
+      appIcons.value = newMap
     }
   }
 
@@ -50,9 +53,12 @@ export function useAerospaceProvider() {
       const uncached = [...newApps].filter((app) => !appIcons.value.has(app))
       if (uncached.length > 0 && provider) {
         const icons = await provider.getAppIcons(uncached)
+        // Create new Map to trigger Vue reactivity
+        const newMap = new Map(appIcons.value)
         icons.forEach((icon) => {
-          appIcons.value.set(icon.app, icon.icon)
+          newMap.set(icon.app, icon.icon)
         })
+        appIcons.value = newMap
       }
     })
 
