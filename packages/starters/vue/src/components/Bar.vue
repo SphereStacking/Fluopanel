@@ -5,13 +5,9 @@ import Clock from './Clock.vue'
 import Battery from './Battery.vue'
 import Cpu from './Cpu.vue'
 import Memory from './Memory.vue'
-import Network from './Network.vue'
 import Media from './Media.vue'
-import Volume from './Volume.vue'
 import Disk from './Disk.vue'
-import Brightness from './Brightness.vue'
 import Bluetooth from './Bluetooth.vue'
-import GitHub from './GitHub.vue'
 import TestPopover from './TestPopover.vue'
 import YouTubeMusic from './YouTubeMusic.vue'
 </script>
@@ -81,13 +77,8 @@ import YouTubeMusic from './YouTubeMusic.vue'
 
       <!-- Right section: System indicators -->
       <div class="flex items-center gap-1 z-10">
-        <!-- <GitHub /> -->
         <TestPopover />
         <TestPopover />
-        <div class="w-px h-4 bg-[var(--glass-border)] mx-1" />
-        <!-- <Volume /> -->
-        <!-- <Brightness /> -->
-        <!-- <Network /> -->
         <div class="w-px h-4 bg-[var(--glass-border)] mx-1" />
         <Disk />
         <Cpu />

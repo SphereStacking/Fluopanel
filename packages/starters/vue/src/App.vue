@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Window, useCoordinator, Popover, usePopoverMode } from '@arcana/vue'
 import Bar from './components/Bar.vue'
-import GitHubIssuesPopover from './components/popovers/GitHubIssuesPopover.vue'
 import GitHubPRsPopover from './components/popovers/GitHubPRsPopover.vue'
 import GitHubNotificationsPopover from './components/popovers/GitHubNotificationsPopover.vue'
 import TestPopoverContent from './components/popovers/TestPopoverContent.vue'
@@ -23,9 +22,6 @@ useCoordinator({ autoHide: !isPopover.value })
   </Window>
 
   <!-- GitHub Popovers -->
-  <!-- <Popover id="github-issues">
-    <GitHubIssuesPopover />
-  </Popover> -->
   <Popover id="github-prs">
     <GitHubPRsPopover />
   </Popover>

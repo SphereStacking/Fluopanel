@@ -18,12 +18,4 @@ export interface ArcanaInitOptions {
   // locale?: string
 }
 
-// モニター情報
-export interface MonitorInfo {
-  name: string
-  width: number
-  height: number
-  x: number
-  y: number
-  scaleFactor: number
-}
+// MonitorInfo is exported from @arcana/core

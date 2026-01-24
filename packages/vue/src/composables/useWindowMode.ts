@@ -7,7 +7,7 @@ import {
   hideCoordinatorWindow,
   type WindowContext,
 } from '@arcana/core'
-import { waitForAllWindows } from './windowRegistry'
+import { waitForAllWindows } from './window-registry'
 
 /**
  * Vue composable for window mode detection and coordinator management.

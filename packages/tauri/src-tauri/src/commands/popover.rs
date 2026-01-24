@@ -164,7 +164,6 @@ pub fn open_popover(
                 if let Some(window) = app.get_webview_window(&label) {
                     let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition { x, y }));
                 }
-                println!("[POPOVER] Re-showing existing panel: {}", label);
                 panel.show();
                 return Ok(PopoverInfo {
                     id: popover_id,
@@ -236,20 +235,13 @@ pub fn open_popover(
             .map_err(|e| e.to_string())?;
 
         // Setup blur handler - use hide() instead of close() to avoid Obj-C exception
-        println!("[POPOVER] Registering blur handler for: {}", label);
         if let Some(window) = app.get_webview_window(&label) {
             window.on_window_event(move |event| {
                 if let tauri::WindowEvent::Focused(false) = event {
-                    println!("[POPOVER] Blur detected for: {}", label_for_blur);
                     // Use order_out (hide) instead of close - safe from event handler
-                    // This just removes the panel from screen without destroying it
                     if let Ok(panel) = app_for_blur.get_webview_panel(&label_for_blur) {
-                        println!("[POPOVER] Panel found, hiding");
                         panel.hide();
-                    } else {
-                        println!("[POPOVER] Panel NOT found!");
                     }
-                    println!("[POPOVER] Emitting popover-closed: {}", popover_id_for_blur);
                     let _ = app_for_blur.emit("popover-closed", &popover_id_for_blur);
                 }
             });

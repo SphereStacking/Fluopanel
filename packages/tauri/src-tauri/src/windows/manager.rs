@@ -174,8 +174,6 @@ pub async fn create_inline_window(
         url.parse().map_err(|e| format!("Invalid URL: {}", e))?
     );
 
-    eprintln!("[Window] Creating window: {}", label);
-
     let _window = WebviewWindowBuilder::new(&app, &label, webview_url)
         .title(&window_id)
         .decorations(decorations)
@@ -189,8 +187,6 @@ pub async fn create_inline_window(
         .inner_size(geometry.width as f64, geometry.height as f64)
         .build()
         .map_err(|e| e.to_string())?;
-
-    eprintln!("[Window] Window created: {}", label);
 
     Ok(())
 }

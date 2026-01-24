@@ -93,11 +93,8 @@ export function usePopover(options: UsePopoverOptions): UsePopoverReturn {
 
   async function setupEventListeners() {
     if (!popoverClosedUnlisten) {
-      console.log('[usePopover] Setting up listener')
       popoverClosedUnlisten = await listen<string>('popover-closed', (event) => {
-        console.log('[usePopover] Received:', event.payload, 'current:', openPopoverId.value)
         if (event.payload === openPopoverId.value) {
-          console.log('[usePopover] Closing popover')
           openPopoverId.value = null
         }
       })

@@ -10,7 +10,7 @@ import {
   type WindowPosition,
   type WindowConfig,
 } from '@arcana/core'
-import { registerPendingWindow, markWindowCompleted } from './composables/windowRegistry'
+import { registerPendingWindow, markWindowCompleted } from './composables/window-registry'
 
 const props = defineProps<{
   /** Unique window identifier */

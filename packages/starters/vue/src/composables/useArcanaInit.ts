@@ -1,7 +1,8 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import type { ArcanaInitOptions, CSSValue, MonitorInfo } from '../types/arcana'
+import type { ArcanaInitOptions, CSSValue } from '../types/arcana'
+import type { MonitorInfo } from '@arcana/core'
 
 /**
  * calc() 式を評価する
