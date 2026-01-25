@@ -12,6 +12,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "resources": {
+      "libs/*": "libs/"
+    },
     "icon": [
       "icons/128x128.png"
     ],

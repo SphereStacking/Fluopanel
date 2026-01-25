@@ -26,6 +26,7 @@ pub struct WindowConfig {
     pub click_through: Option<bool>,
 }
 
+/// Widget manifest (also known as WindowManifest for backwards compatibility)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WindowManifest {
@@ -70,27 +71,53 @@ impl Default for WindowManifest {
     }
 }
 
-/// Get the windows directory path
+/// Get the widgets directory path (prefers "widgets", falls back to "windows" for backwards compatibility)
 pub fn get_windows_dir() -> Result<PathBuf, String> {
     dirs::config_dir()
-        .map(|d| d.join("arcana/windows"))
+        .map(|d| {
+            let widgets_dir = d.join("arcana/widgets");
+            let windows_dir = d.join("arcana/windows");
+            // Prefer widgets directory, fall back to windows for backwards compatibility
+            if widgets_dir.exists() {
+                widgets_dir
+            } else if windows_dir.exists() {
+                windows_dir
+            } else {
+                // Default to widgets for new installations
+                widgets_dir
+            }
+        })
         .ok_or_else(|| "Could not determine config directory".to_string())
 }
 
-/// Discover all windows in the windows directory
+/// Get manifest path for a widget directory (prefers "widget.json", falls back to "window.json")
+fn get_manifest_path(widget_dir: &PathBuf) -> Option<PathBuf> {
+    let widget_json = widget_dir.join("widget.json");
+    let window_json = widget_dir.join("window.json");
+
+    if widget_json.exists() {
+        Some(widget_json)
+    } else if window_json.exists() {
+        Some(window_json)
+    } else {
+        None
+    }
+}
+
+/// Discover all widgets in the widgets directory
 #[command]
 pub fn discover_windows() -> Result<Vec<WindowManifest>, String> {
-    let windows_dir = get_windows_dir()?;
+    let widgets_dir = get_windows_dir()?;
 
-    if !windows_dir.exists() {
-        // Create windows directory if it doesn't exist
-        fs::create_dir_all(&windows_dir).map_err(|e| e.to_string())?;
+    if !widgets_dir.exists() {
+        // Create widgets directory if it doesn't exist
+        fs::create_dir_all(&widgets_dir).map_err(|e| e.to_string())?;
         return Ok(Vec::new());
     }
 
-    let mut windows = Vec::new();
+    let mut widgets = Vec::new();
 
-    let entries = fs::read_dir(&windows_dir).map_err(|e| e.to_string())?;
+    let entries = fs::read_dir(&widgets_dir).map_err(|e| e.to_string())?;
 
     for entry in entries {
         let entry = entry.map_err(|e| e.to_string())?;
@@ -100,45 +127,43 @@ pub fn discover_windows() -> Result<Vec<WindowManifest>, String> {
             continue;
         }
 
-        let manifest_path = path.join("window.json");
-        if !manifest_path.exists() {
-            continue;
-        }
+        let manifest_path = match get_manifest_path(&path) {
+            Some(p) => p,
+            None => continue,
+        };
 
         match fs::read_to_string(&manifest_path) {
             Ok(content) => match serde_json::from_str::<WindowManifest>(&content) {
                 Ok(manifest) => {
-                    windows.push(manifest);
+                    widgets.push(manifest);
                 }
                 Err(e) => {
                     eprintln!(
-                        "[Window] Failed to parse manifest at {:?}: {}",
+                        "[Widget] Failed to parse manifest at {:?}: {}",
                         manifest_path, e
                     );
                 }
             },
             Err(e) => {
                 eprintln!(
-                    "[Window] Failed to read manifest at {:?}: {}",
+                    "[Widget] Failed to read manifest at {:?}: {}",
                     manifest_path, e
                 );
             }
         }
     }
 
-    Ok(windows)
+    Ok(widgets)
 }
 
-/// Get a specific window manifest by ID
+/// Get a specific widget manifest by ID
 #[command]
 pub fn get_window_manifest(window_id: String) -> Result<WindowManifest, String> {
-    let windows_dir = get_windows_dir()?;
-    let window_dir = windows_dir.join(&window_id);
-    let manifest_path = window_dir.join("window.json");
+    let widgets_dir = get_windows_dir()?;
+    let widget_dir = widgets_dir.join(&window_id);
 
-    if !manifest_path.exists() {
-        return Err(format!("Window '{}' not found", window_id));
-    }
+    let manifest_path = get_manifest_path(&widget_dir)
+        .ok_or_else(|| format!("Widget '{}' not found (no widget.json or window.json)", window_id))?;
 
     let content = fs::read_to_string(&manifest_path).map_err(|e| e.to_string())?;
     let manifest: WindowManifest = serde_json::from_str(&content).map_err(|e| e.to_string())?;

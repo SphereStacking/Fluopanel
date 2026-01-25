@@ -22,7 +22,7 @@ use windows::{
 use once_cell::sync::OnceCell;
 use std::path::PathBuf;
 use tauri::http::Response;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 
 #[derive(Parser)]
 #[command(name = "arcana")]
@@ -154,7 +154,7 @@ pub fn run() {
             // Shell commands
             execute_shell,
         ])
-        .register_uri_scheme_protocol("arcana", |_ctx, request| {
+        .register_uri_scheme_protocol("arcana", |ctx, request| {
             let path = request.uri().path();
             let path = if path == "/" || path.is_empty() {
                 "/index.html"
@@ -162,58 +162,118 @@ pub fn run() {
                 path
             };
 
-            // Check if this is a window request: /window/{window_id}/{file_path}
-            let file_path = if path.starts_with("/window/") {
-                let parts: Vec<&str> = path[8..].splitn(2, '/').collect();
-                if parts.len() >= 1 {
-                    let window_id = parts[0];
-                    let file = if parts.len() >= 2 { parts[1] } else { "index.html" };
-                    get_windows_dir()
-                        .map(|d| d.join(window_id).join(file))
-                        .unwrap_or_default()
-                } else {
-                    PathBuf::new()
+            // Importmap for widget runtime libraries
+            const IMPORTMAP: &str = r#"<script type="importmap">
+{
+  "imports": {
+    "@arcana/providers": "arcana://lib/providers.js",
+    "@tauri-apps/api/core": "arcana://lib/tauri-api.js",
+    "@tauri-apps/api/event": "arcana://lib/tauri-api.js",
+    "vue": "arcana://lib/vue.esm.js"
+  }
+}
+</script>
+"#;
+
+            // Helper: get MIME type for file
+            let get_mime = |path: &PathBuf| -> &'static str {
+                match path.extension().and_then(|e| e.to_str()) {
+                    Some("html") => "text/html",
+                    Some("js") | Some("mjs") => "application/javascript",
+                    Some("css") => "text/css",
+                    Some("json") => "application/json",
+                    Some("png") => "image/png",
+                    Some("svg") => "image/svg+xml",
+                    Some("woff") => "font/woff",
+                    Some("woff2") => "font/woff2",
+                    _ => "application/octet-stream",
                 }
-            } else if has_user_config() {
-                // Legacy: serve from ~/.config/arcana/dist/
-                get_user_config_dir().unwrap().join(&path[1..])
-            } else {
-                PathBuf::new()
             };
 
-            if file_path.exists() {
-                match std::fs::read(&file_path) {
-                    Ok(content) => {
-                        let mime = match file_path.extension().and_then(|e| e.to_str()) {
-                            Some("html") => "text/html",
-                            Some("js") => "application/javascript",
-                            Some("css") => "text/css",
-                            Some("json") => "application/json",
-                            Some("png") => "image/png",
-                            Some("svg") => "image/svg+xml",
-                            Some("woff") => "font/woff",
-                            Some("woff2") => "font/woff2",
-                            _ => "application/octet-stream",
-                        };
-                        Response::builder()
-                            .header("Content-Type", mime)
-                            .header("Access-Control-Allow-Origin", "*")
-                            .body(content)
-                            .unwrap()
+            // Helper: serve file with MIME type
+            let serve_file = |file_path: &PathBuf| -> Response<Vec<u8>> {
+                if file_path.exists() {
+                    match std::fs::read(file_path) {
+                        Ok(content) => {
+                            Response::builder()
+                                .header("Content-Type", get_mime(file_path))
+                                .header("Access-Control-Allow-Origin", "*")
+                                .body(content)
+                                .unwrap()
+                        }
+                        Err(_) => Response::builder().status(404).body(Vec::new()).unwrap(),
                     }
-                    Err(_) => {
-                        Response::builder()
-                            .status(404)
-                            .body(Vec::new())
-                            .unwrap()
+                } else {
+                    Response::builder().status(404).body(Vec::new()).unwrap()
+                }
+            };
+
+            // Helper: serve HTML with importmap injection for widgets
+            let serve_widget_html = |file_path: &PathBuf| -> Response<Vec<u8>> {
+                if file_path.exists() {
+                    match std::fs::read_to_string(file_path) {
+                        Ok(mut content) => {
+                            // Inject importmap if not already present
+                            if !content.contains("type=\"importmap\"") {
+                                // Try to inject after <head>, fallback to start of file
+                                if let Some(pos) = content.find("<head>") {
+                                    content.insert_str(pos + 6, IMPORTMAP);
+                                } else if let Some(pos) = content.find("<HEAD>") {
+                                    content.insert_str(pos + 6, IMPORTMAP);
+                                } else {
+                                    // Prepend if no <head> tag found
+                                    content = format!("{}{}", IMPORTMAP, content);
+                                }
+                            }
+                            Response::builder()
+                                .header("Content-Type", "text/html")
+                                .header("Access-Control-Allow-Origin", "*")
+                                .body(content.into_bytes())
+                                .unwrap()
+                        }
+                        Err(_) => Response::builder().status(404).body(Vec::new()).unwrap(),
+                    }
+                } else {
+                    Response::builder().status(404).body(Vec::new()).unwrap()
+                }
+            };
+
+            // Route: /lib/{file} - Serve shared libraries for widget runtime
+            if path.starts_with("/lib/") {
+                let file = &path[5..];
+                // Try to load from resource directory (bundled with app)
+                if let Ok(resource_dir) = ctx.app_handle().path().resource_dir() {
+                    let lib_path: PathBuf = resource_dir.join("libs").join(file);
+                    return serve_file(&lib_path);
+                }
+                return Response::builder().status(404).body(Vec::new()).unwrap();
+            }
+
+            // Route: /window/{window_id}/{file_path} - Serve widget files
+            if path.starts_with("/window/") {
+                let parts: Vec<&str> = path[8..].splitn(2, '/').collect();
+                if !parts.is_empty() {
+                    let window_id = parts[0];
+                    let file = if parts.len() >= 2 { parts[1] } else { "index.html" };
+                    if let Ok(windows_dir) = get_windows_dir() {
+                        let file_path = windows_dir.join(window_id).join(file);
+                        // Inject importmap for HTML files in widget directories
+                        if file.ends_with(".html") || file == "index.html" {
+                            return serve_widget_html(&file_path);
+                        }
+                        return serve_file(&file_path);
                     }
                 }
-            } else {
-                Response::builder()
-                    .status(404)
-                    .body(Vec::new())
-                    .unwrap()
+                return Response::builder().status(404).body(Vec::new()).unwrap();
             }
+
+            // Legacy: serve from ~/.config/arcana/dist/
+            if has_user_config() {
+                let file_path = get_user_config_dir().unwrap().join(&path[1..]);
+                return serve_file(&file_path);
+            }
+
+            Response::builder().status(404).body(Vec::new()).unwrap()
         })
         .setup(|app| {
             // Store AppHandle globally for event emission from native callbacks
