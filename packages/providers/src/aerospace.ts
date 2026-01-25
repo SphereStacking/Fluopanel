@@ -67,7 +67,7 @@ export function createAerospaceProvider(): AerospaceProvider {
         return { app: appName, icon: iconCache.get(appName) ?? null }
       }
 
-      const result = await invoke<AppIcon>('get_app_icon', { app_name: appName })
+      const result = await invoke<AppIcon>('get_app_icon', { appName })
       iconCache.set(appName, result.icon)
       return result
     },
@@ -77,7 +77,7 @@ export function createAerospaceProvider(): AerospaceProvider {
       const uncached = appNames.filter((name) => !iconCache.has(name))
 
       if (uncached.length > 0) {
-        const results = await invoke<AppIcon[]>('get_app_icons', { app_names: uncached })
+        const results = await invoke<AppIcon[]>('get_app_icons', { appNames: uncached })
         results.forEach((r) => iconCache.set(r.app, r.icon))
       }
 

@@ -29,7 +29,7 @@ export function useAerospaceProvider() {
     try {
       const result = await provider.getWorkspaces()
       workspaces.value = result
-      fetchIconsForWorkspaces(result)
+      await fetchIconsForWorkspaces(result)
     } catch (error) {
       console.error('Failed to refresh workspaces:', error)
     }

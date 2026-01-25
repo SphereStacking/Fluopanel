@@ -7,25 +7,10 @@ const MAX_ICONS = 3
 
 const { workspaces, focusWorkspace, getAppIcon } = useAerospaceProvider()
 
-// Show workspaces 1-9, merge data with empty slots
 const displayWorkspaces = computed((): Workspace[] => {
-  const slots: Workspace[] = Array.from({ length: 9 }, (_, i) => ({
-    id: String(i + 1),
-    displayName: String(i + 1),
-    focused: false,
-    visible: false,
-    windows: [],
-    monitor: 0,
-  }))
-
-  for (const ws of workspaces.value) {
-    const index = parseInt(ws.id, 10) - 1
-    if (index >= 0 && index < 9) {
-      slots[index] = ws
-    }
-  }
-
-  return slots
+  return workspaces.value
+    .filter(ws => ws.windows.length > 0)
+    .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
 })
 
 const handleClick = async (id: string) => {
