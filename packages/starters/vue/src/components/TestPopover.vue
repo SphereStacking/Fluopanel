@@ -26,12 +26,13 @@ async function openPopover() {
 </script>
 
 <template>
-  <div
+  <button
     ref="triggerRef"
+    type="button"
     @click="openPopover"
     class="flex items-center gap-1 py-1 px-2 rounded-lg text-[12px] transition-all duration-200 hover:bg-widget-glass-hover cursor-pointer"
   >
     <Icon icon="mdi:test-tube" class="w-[14px] h-[14px] text-holo-cyan" />
     <span class="text-text-secondary">Test</span>
-  </div>
+  </button>
 </template>

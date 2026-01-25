@@ -108,7 +108,7 @@ const onSeekChange = async (e: Event) => {
 </script>
 
 <template>
-  <div
+  <section
     v-if="music?.title"
     class="
       flex items-center gap-2 py-1.5 px-3
@@ -260,5 +260,5 @@ const onSeekChange = async (e: Event) => {
         }"
       />
     </div>
-  </div>
+  </section>
 </template>

@@ -32,7 +32,7 @@ const statusColor = computed(() => {
 </script>
 
 <template>
-  <div
+  <figure
     v-if="network"
     class="
       flex items-center gap-1.5 py-1 px-2.5 rounded-lg
@@ -49,12 +49,12 @@ const statusColor = computed(() => {
       class="w-[14px] h-[14px] transition-colors duration-200"
       :class="statusColor"
     />
-    <span
+    <figcaption
       class="
         font-medium max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap
         text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]
         transition-colors duration-200
       "
-    >{{ displayText }}</span>
-  </div>
+    >{{ displayText }}</figcaption>
+  </figure>
 </template>

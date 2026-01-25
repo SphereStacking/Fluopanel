@@ -76,10 +76,11 @@ const notificationColor = computed(() => {
 </script>
 
 <template>
-  <div class="flex items-center gap-0.5">
+  <nav class="flex items-center gap-0.5">
     <!-- My Issues -->
-    <div
+    <button
       ref="issuesTriggerRef"
+      type="button"
       @click="openIssues"
       class="flex items-center gap-1 py-1 px-2 rounded-lg text-[12px] tracking-wide transition-all duration-200 hover:bg-widget-glass-hover cursor-pointer group"
     >
@@ -93,11 +94,12 @@ const notificationColor = computed(() => {
         class="font-medium tabular-nums text-text-secondary group-hover:text-text-primary transition-colors duration-200"
         >{{ github.issueCount.value }}</span
       >
-    </div>
+    </button>
 
     <!-- My Pull Requests -->
-    <div
+    <button
       ref="prsTriggerRef"
+      type="button"
       @click="openPRs"
       class="flex items-center gap-1 py-1 px-2 rounded-lg text-[12px] tracking-wide transition-all duration-200 hover:bg-widget-glass-hover cursor-pointer group"
     >
@@ -111,11 +113,12 @@ const notificationColor = computed(() => {
         class="font-medium tabular-nums text-text-secondary group-hover:text-text-primary transition-colors duration-200"
         >{{ github.prCount.value }}</span
       >
-    </div>
+    </button>
 
     <!-- Unread Notifications -->
-    <div
+    <button
       ref="notificationsTriggerRef"
+      type="button"
       @click="openNotifications"
       class="flex items-center gap-1 py-1 px-2 rounded-lg text-[12px] tracking-wide transition-all duration-200 cursor-pointer group hover:bg-widget-glass-hover"
     >
@@ -129,6 +132,6 @@ const notificationColor = computed(() => {
         class="font-medium tabular-nums text-text-secondary group-hover:text-text-primary transition-colors duration-200"
         >{{ github.notificationCount.value }}</span
       >
-    </div>
-  </div>
+    </button>
+  </nav>
 </template>

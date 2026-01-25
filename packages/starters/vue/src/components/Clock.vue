@@ -27,7 +27,7 @@ const dayInfo = computed(() => {
 </script>
 
 <template>
-  <div
+  <time
     class="
       flex items-center gap-3 py-1 px-2
       rounded-lg
@@ -36,7 +36,7 @@ const dayInfo = computed(() => {
     "
   >
     <!-- Time display with holographic accent -->
-    <div class="flex items-baseline gap-0.5">
+    <span class="flex items-baseline gap-0.5">
       <span
         class="
           text-[18px] font-bold tracking-tight
@@ -60,16 +60,16 @@ const dayInfo = computed(() => {
           group-hover:holo-text
         "
       >{{ timeParts.minutes }}</span>
-    </div>
+    </span>
 
     <!-- Date info -->
-    <div class="flex flex-col items-start -space-y-0.5">
+    <span class="flex flex-col items-start -space-y-0.5">
       <span class="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">
         {{ dayInfo.day }}
       </span>
       <span class="text-[11px] font-semibold text-[var(--text-secondary)]">
         {{ dayInfo.month }} {{ dayInfo.date }}
       </span>
-    </div>
-  </div>
+    </span>
+  </time>
 </template>

@@ -34,8 +34,9 @@ const handleToggle = async () => {
 </script>
 
 <template>
-  <div
+  <button
     v-if="bluetooth"
+    type="button"
     class="
       flex items-center gap-1.5 py-1 px-2.5 rounded-lg
       text-[12px] tracking-wide
@@ -55,5 +56,5 @@ const handleToggle = async () => {
       v-if="connectedCount > 0"
       class="font-medium tabular-nums text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors duration-200"
     >{{ connectedCount }}</span>
-  </div>
+  </button>
 </template>

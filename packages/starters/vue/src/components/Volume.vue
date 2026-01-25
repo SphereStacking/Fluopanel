@@ -63,7 +63,7 @@ const onVolumeChange = async (e: Event) => {
 </script>
 
 <template>
-  <div
+  <figure
     v-if="volume"
     class="
       flex items-center gap-1.5 py-1 px-2.5 rounded-lg
@@ -134,5 +134,5 @@ const onVolumeChange = async (e: Event) => {
         }"
       />
     </div>
-  </div>
+  </figure>
 </template>

@@ -36,7 +36,7 @@ const statusColor = computed(() => {
 </script>
 
 <template>
-  <div
+  <figure
     v-if="battery"
     class="
       flex items-center gap-1.5 py-1 px-2.5 rounded-lg
@@ -52,8 +52,8 @@ const statusColor = computed(() => {
       class="w-[14px] h-[14px] transition-colors duration-200"
       :class="[statusColor, { 'animate-pulse': battery.charging }]"
     />
-    <span
+    <figcaption
       class="font-medium tabular-nums min-w-[3ch] text-right text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors duration-200"
-    >{{ percentText }}</span>
-  </div>
+    >{{ percentText }}</figcaption>
+  </figure>
 </template>

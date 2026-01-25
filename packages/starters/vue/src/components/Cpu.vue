@@ -25,7 +25,7 @@ const glowClass = computed(() => {
 </script>
 
 <template>
-  <div
+  <figure
     v-if="cpu"
     class="
       flex items-center gap-1.5 py-1 px-2.5 rounded-lg
@@ -38,9 +38,9 @@ const glowClass = computed(() => {
     :class="glowClass"
   >
     <Icon icon="mdi:chip" class="w-[14px] h-[14px] text-[var(--holo-blue)] transition-colors duration-200" />
-    <span
+    <figcaption
       class="font-medium tabular-nums min-w-[2.5ch] text-right transition-colors duration-200"
       :class="statusColor"
-    >{{ usageText }}</span>
-  </div>
+    >{{ usageText }}</figcaption>
+  </figure>
 </template>

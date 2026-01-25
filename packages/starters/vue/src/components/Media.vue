@@ -48,7 +48,7 @@ const handlePrev = async () => {
 </script>
 
 <template>
-  <div
+  <section
     v-if="media?.title"
     class="
       flex items-center gap-2 py-1 px-3
@@ -119,5 +119,5 @@ const handlePrev = async () => {
         "
       >{{ displayText }}</span>
     </div>
-  </div>
+  </section>
 </template>

@@ -34,11 +34,12 @@ const getUniqueApps = (ws: Workspace): string[] => {
 </script>
 
 <template>
-  <!-- Workspace container -->
-  <div class="flex items-center gap-0.5 px-1 py-0.5 rounded-lg">
-    <div
+  <!-- Workspace navigation -->
+  <nav class="flex items-center gap-0.5 px-1 py-0.5 rounded-lg">
+    <button
       v-for="ws in displayWorkspaces"
       :key="ws.id"
+      type="button"
       class="
         relative flex items-center gap-1.5 px-2 py-0.5 rounded-md cursor-pointer
         text-[13px] tracking-wide
@@ -90,6 +91,6 @@ const getUniqueApps = (ws: Workspace): string[] => {
           </span>
         </div>
       </template>
-    </div>
-  </div>
+    </button>
+  </nav>
 </template>

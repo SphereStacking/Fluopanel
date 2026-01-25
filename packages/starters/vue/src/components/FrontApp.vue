@@ -8,7 +8,7 @@ const appIcon = ref<string | null>(null)
 
 const fetchIcon = async (appName: string) => {
   try {
-    const result = await invoke<{ app: string; icon: string | null }>('get_app_icon', { app: appName })
+    const result = await invoke<{ app: string; icon: string | null }>('get_app_icon', { appName })
     appIcon.value = result.icon
   } catch (error) {
     console.error('Failed to get app icon:', error)
@@ -25,7 +25,7 @@ watch(activeApp, (newApp, oldApp) => {
 </script>
 
 <template>
-  <div
+  <section
     v-if="activeApp"
     class="
       flex items-center gap-2 pl-2 pr-3 py-1
@@ -63,5 +63,5 @@ watch(activeApp, (newApp, oldApp) => {
         group-hover:text-[var(--holo-cyan)]
       "
     >{{ activeApp.name }}</span>
-  </div>
+  </section>
 </template>

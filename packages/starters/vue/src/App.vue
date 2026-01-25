@@ -84,9 +84,10 @@ useCoordinator({ autoHide: !isPopover.value })
         />
 
         <!-- Left section: Logo, Workspaces, Active App -->
-        <div class="flex items-center gap-2 z-10">
+        <nav class="flex items-center gap-2 z-10">
           <!-- Apple Logo - Settings Menu (Native) -->
-          <div
+          <button
+            type="button"
             class="
               flex items-center justify-center w-7 h-7
               rounded-lg cursor-pointer
@@ -104,23 +105,23 @@ useCoordinator({ autoHide: !isPopover.value })
                 transition-colors duration-300
               "
             >􀣺</span>
-          </div>
+          </button>
 
           <div class="w-px h-4 bg-[var(--glass-border)]" />
 
           <Workspaces />
           <FrontApp />
-        </div>
+        </nav>
 
         <!-- Center section: Media & Clock -->
-        <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
+        <section class="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
           <Media />
           <YouTubeMusic />
           <Clock />
-        </div>
+        </section>
 
         <!-- Right section: System indicators -->
-        <div class="flex items-center gap-1 z-10">
+        <aside class="flex items-center gap-1 z-10">
           <TestPopover popoverId="test-popover1" />
           <TestPopover popoverId="test-popover2" />
           <GitHub />
@@ -130,7 +131,7 @@ useCoordinator({ autoHide: !isPopover.value })
           <Bluetooth />
           <Memory />
           <Battery />
-        </div>
+        </aside>
       </div>
     </div>
   </Window>

@@ -26,7 +26,7 @@ const glowClass = computed(() => {
 </script>
 
 <template>
-  <div
+  <figure
     v-if="disk"
     class="
       flex items-center gap-1.5 py-1 px-2.5 rounded-lg
@@ -39,9 +39,9 @@ const glowClass = computed(() => {
     :class="glowClass"
   >
     <Icon icon="mdi:harddisk" class="w-[14px] h-[14px] text-[var(--holo-orange)] transition-colors duration-200" />
-    <span
+    <figcaption
       class="font-medium tabular-nums min-w-[3.5ch] text-right transition-colors duration-200"
       :class="statusColor"
-    >{{ availableText }}</span>
-  </div>
+    >{{ availableText }}</figcaption>
+  </figure>
 </template>
