@@ -124,6 +124,7 @@ dependencies = [
  "tauri-plugin-mcp-bridge",
  "tauri-plugin-shell",
  "tokio",
+ "url",
 ]
 
 [[package]]

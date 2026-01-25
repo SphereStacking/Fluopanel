@@ -19,6 +19,8 @@ const props = defineProps<{
   position: WindowPosition
   /** Window configuration */
   window?: WindowConfig
+  /** Custom URL for external widgets (optional) */
+  url?: string
 }>()
 
 const currentWindowId = getWindowId()
@@ -47,6 +49,7 @@ async function createWindow() {
       id: props.id,
       position: props.position,
       window: props.window,
+      url: props.url,
     })
   } catch {
     // Window might already exist (hot reload), update position instead

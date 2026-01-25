@@ -208,9 +208,9 @@ pub async fn create_inline_window(
         monitor_height,
     );
 
-    let webview_url = WebviewUrl::External(
-        url.parse().map_err(|e| format!("Invalid URL: {}", e))?
-    );
+    // Parse URL - Tauri handles custom protocols registered via register_uri_scheme_protocol
+    let parsed_url: url::Url = url.parse().map_err(|e| format!("Invalid URL: {}", e))?;
+    let webview_url = WebviewUrl::External(parsed_url);
 
     let _window = WebviewWindowBuilder::new(&app, &label, webview_url)
         .title(&window_id)

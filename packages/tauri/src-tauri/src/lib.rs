@@ -52,7 +52,8 @@ pub enum Commands {
 static GLOBAL_APP_HANDLE: OnceCell<tauri::AppHandle> = OnceCell::new();
 
 fn get_user_config_dir() -> Option<PathBuf> {
-    dirs::config_dir().map(|d| d.join("arcana/dist"))
+    // Use XDG-style config directory for consistency
+    dirs::home_dir().map(|home| home.join(".config/arcana/dist"))
 }
 
 fn has_user_config() -> bool {
@@ -155,12 +156,23 @@ pub fn run() {
             execute_shell,
         ])
         .register_uri_scheme_protocol("arcana", |ctx, request| {
-            let path = request.uri().path();
+            // Combine host and path for routing
+            // arcana://window/test-widget/index.html -> host="window", path="/test-widget/index.html"
+            // We need full path: /window/test-widget/index.html
+            let uri = request.uri();
+            let host = uri.host().unwrap_or("");
+            let uri_path = uri.path();
+            let path = if host.is_empty() {
+                uri_path.to_string()
+            } else {
+                format!("/{}{}", host, uri_path)
+            };
             let path = if path == "/" || path.is_empty() {
-                "/index.html"
+                "/index.html".to_string()
             } else {
                 path
             };
+            let path = path.as_str();
 
             // Importmap for widget runtime libraries
             const IMPORTMAP: &str = r#"<script type="importmap">
@@ -241,11 +253,24 @@ pub fn run() {
             // Route: /lib/{file} - Serve shared libraries for widget runtime
             if path.starts_with("/lib/") {
                 let file = &path[5..];
-                // Try to load from resource directory (bundled with app)
+
+                // Try resource directory first (bundled with app in production)
                 if let Ok(resource_dir) = ctx.app_handle().path().resource_dir() {
                     let lib_path: PathBuf = resource_dir.join("libs").join(file);
-                    return serve_file(&lib_path);
+                    if lib_path.exists() {
+                        return serve_file(&lib_path);
+                    }
                 }
+
+                // Fallback: development mode - look in src-tauri/libs/
+                // This works when running `cargo tauri dev`
+                let dev_lib_path: PathBuf = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("libs")
+                    .join(file);
+                if dev_lib_path.exists() {
+                    return serve_file(&dev_lib_path);
+                }
+
                 return Response::builder().status(404).body(Vec::new()).unwrap();
             }
 

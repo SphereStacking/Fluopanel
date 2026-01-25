@@ -45,5 +45,12 @@ useCoordinator({ autoHide: !isPopover.value })
     <GitHubNotificationsPopover />
   </Popover>
 
+  <!-- Test Widget -->
+  <Window
+    id="test-widget"
+    :position="{ top: 0, right: 0, width: 300, height: 200 }"
+    url="arcana://window/test-widget/index.html"
+  />
+
 </template>
 

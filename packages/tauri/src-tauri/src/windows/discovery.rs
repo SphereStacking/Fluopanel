@@ -72,11 +72,14 @@ impl Default for WindowManifest {
 }
 
 /// Get the widgets directory path (prefers "widgets", falls back to "windows" for backwards compatibility)
+/// Uses XDG-style config directory (~/.config/arcana/) for cross-platform consistency
 pub fn get_windows_dir() -> Result<PathBuf, String> {
-    dirs::config_dir()
-        .map(|d| {
-            let widgets_dir = d.join("arcana/widgets");
-            let windows_dir = d.join("arcana/windows");
+    dirs::home_dir()
+        .map(|home| {
+            // Use XDG-style config directory for consistency
+            let config_base = home.join(".config/arcana");
+            let widgets_dir = config_base.join("widgets");
+            let windows_dir = config_base.join("windows");
             // Prefer widgets directory, fall back to windows for backwards compatibility
             if widgets_dir.exists() {
                 widgets_dir
@@ -87,7 +90,7 @@ pub fn get_windows_dir() -> Result<PathBuf, String> {
                 widgets_dir
             }
         })
-        .ok_or_else(|| "Could not determine config directory".to_string())
+        .ok_or_else(|| "Could not determine home directory".to_string())
 }
 
 /// Get manifest path for a widget directory (prefers "widget.json", falls back to "window.json")
