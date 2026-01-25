@@ -325,6 +325,9 @@ pub fn open_popover(
                     monitor,
                 );
 
+                let available_max_height =
+                    calculate_available_height(&anchor, offset_y, monitor_y, monitor_height);
+
                 if let Some(window) = app.get_webview_window(&label) {
                     if let Err(e) =
                         window.set_position(tauri::Position::Logical(tauri::LogicalPosition {
@@ -334,11 +337,11 @@ pub fn open_popover(
                     {
                         eprintln!("[popover] Failed to set position: {}", e);
                     }
-                    // Don't reset size - keep the auto-sized dimensions from previous show
-                }
 
-                let available_max_height =
-                    calculate_available_height(&anchor, offset_y, monitor_y, monitor_height);
+                    // Dispatch event to reset animations (no reload needed)
+                    // This avoids flickering from page reload while keeping animations fresh
+                    let _ = window.eval("window.dispatchEvent(new Event('popover-reopen'))");
+                }
 
                 panel.show();
                 return Ok(PopoverInfo {

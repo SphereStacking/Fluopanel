@@ -39,7 +39,8 @@ export function useAutoSize(
 ): UseAutoSizeReturn {
   const width = ref(0)
   const height = ref(0)
-  let observer: ResizeObserver | null = null
+  let resizeObserver: ResizeObserver | null = null
+  let mutationObserver: MutationObserver | null = null
 
   const isEnabled = (): boolean => {
     if (options?.enabled === undefined) return true
@@ -66,30 +67,36 @@ export function useAutoSize(
     if (!elementRef.value) return
     if (!isEnabled()) return
 
-    // Use scrollWidth/scrollHeight to get natural content size
-    const rawWidth = elementRef.value.scrollWidth
-    const rawHeight = elementRef.value.scrollHeight
+    const el = elementRef.value
 
-    // Check for scrollable child elements to calculate total content height
-    const scrollableChild = elementRef.value.querySelector(
-      '.overflow-y-auto, .overflow-auto, [style*="overflow-y: auto"], [style*="overflow: auto"]'
-    ) as HTMLElement | null
+    // Temporarily remove height constraints to measure true content size
+    const originalHeight = el.style.height
+    const originalMaxHeight = el.style.maxHeight
+    const originalOverflow = el.style.overflow
+    el.style.height = 'auto'
+    el.style.maxHeight = 'none'
+    el.style.overflow = 'hidden' // Prevent scrollbar from affecting measurement
 
-    // Calculate total content height including scrollable content
-    let totalContentHeight = rawHeight
-    if (scrollableChild) {
-      const hiddenHeight = scrollableChild.scrollHeight - scrollableChild.clientHeight
-      if (hiddenHeight > 0) {
-        totalContentHeight += hiddenHeight
-      }
-    }
+    // Measure true content size
+    const rawWidth = el.scrollWidth
+    const rawHeight = el.scrollHeight
+
+    // Restore original styles
+    el.style.height = originalHeight
+    el.style.maxHeight = originalMaxHeight
+    el.style.overflow = originalOverflow
 
     // Determine final height:
-    // - If total content exceeds maxHeight, use maxHeight (enables scrolling)
+    // - If content exceeds maxHeight, use maxHeight (enables scrolling)
     // - Otherwise, use actual content height (no scrolling needed)
     const maxVal = unwrap(options?.maxHeight)
-    const newWidth = clamp(rawWidth, options?.minWidth, options?.maxWidth)
-    const newHeight = maxVal && totalContentHeight > maxVal
+    const needsVerticalScroll = maxVal !== undefined && rawHeight > maxVal
+
+    // When vertical scrolling is needed, add scrollbar width to accommodate it
+    const scrollbarWidth = needsVerticalScroll ? 8 : 0 // Match CSS scrollbar width
+
+    const newWidth = clamp(rawWidth + scrollbarWidth, options?.minWidth, options?.maxWidth)
+    const newHeight = needsVerticalScroll
       ? maxVal // Content exceeds max, fix at maxHeight to enable scrolling
       : clamp(rawHeight, options?.minHeight, options?.maxHeight)
 
@@ -112,10 +119,34 @@ export function useAutoSize(
 
   onMounted(async () => {
     if (elementRef.value && isEnabled()) {
-      observer = new ResizeObserver(() => {
+      // ResizeObserver for size changes
+      resizeObserver = new ResizeObserver(() => {
         updateSize()
       })
-      observer.observe(elementRef.value)
+      resizeObserver.observe(elementRef.value)
+
+      // Also observe all children for size changes (handles content inside overflow:auto)
+      const children = elementRef.value.querySelectorAll('*')
+      children.forEach((child) => {
+        resizeObserver?.observe(child)
+      })
+
+      // MutationObserver for DOM changes (items added/removed)
+      mutationObserver = new MutationObserver(() => {
+        // Re-observe new children
+        if (elementRef.value && resizeObserver) {
+          const newChildren = elementRef.value.querySelectorAll('*')
+          newChildren.forEach((child) => {
+            resizeObserver?.observe(child)
+          })
+        }
+        updateSize()
+      })
+      mutationObserver.observe(elementRef.value, {
+        childList: true,
+        subtree: true,
+      })
+
       // Wait for DOM to be fully rendered before initial size update
       await nextTick()
       updateSize()
@@ -123,9 +154,13 @@ export function useAutoSize(
   })
 
   onUnmounted(() => {
-    if (observer) {
-      observer.disconnect()
-      observer = null
+    if (resizeObserver) {
+      resizeObserver.disconnect()
+      resizeObserver = null
+    }
+    if (mutationObserver) {
+      mutationObserver.disconnect()
+      mutationObserver = null
     }
   })
 

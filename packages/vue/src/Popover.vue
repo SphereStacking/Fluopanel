@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getPopoverContext } from '@arcana/core'
 import { useAutoSize } from './composables/useAutoSize'
 
@@ -18,10 +18,26 @@ const shouldRenderContent = computed(() => {
   return popoverContext.isPopover && popoverContext.id === props.id
 })
 
+// Animation key: incremented on popover-reopen to force slot re-render
+// This replays animations without page reload (avoiding flicker)
+const animationKey = ref(0)
+
+onMounted(() => {
+  if (shouldRenderContent.value) {
+    const handleReopen = () => {
+      animationKey.value++
+    }
+    window.addEventListener('popover-reopen', handleReopen)
+    onUnmounted(() => {
+      window.removeEventListener('popover-reopen', handleReopen)
+    })
+  }
+})
+
 // Auto-size the popover window based on content
 // maxHeight is calculated by Rust side based on anchor position and screen bounds
 const contentRef = ref<HTMLElement | null>(null)
-useAutoSize(contentRef, {
+const { height } = useAutoSize(contentRef, {
   enabled: shouldRenderContent,
   maxHeight: popoverContext.maxHeight ?? undefined,
 })
@@ -34,10 +50,15 @@ useAutoSize(contentRef, {
     ref="contentRef"
     :style="{
       width: 'fit-content',
-      height: 'fit-content',
+      height: height ? `${height}px` : 'fit-content',
       maxHeight: popoverContext.maxHeight ? `${popoverContext.maxHeight}px` : undefined,
+      overflow: 'hidden',
     }"
   >
-    <slot />
+    <!-- Key changes on reopen to force slot re-render and replay animations -->
+    <div :key="animationKey">
+      <slot />
+    </div>
   </div>
 </template>
+

@@ -57,14 +57,14 @@ onMounted(() => {
 
 <template>
   <div
-    class="relative font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Text',sans-serif] text-[13px] antialiased"
+    class="relative h-full font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Text',sans-serif] text-[13px] antialiased"
   >
     <!-- Glass background -->
     <div
-      class="absolute inset-0 rounded-xl border border-glass-border bg-glass-bg backdrop-blur-[40px] backdrop-saturate-[180%] shadow-[0_0_0_0.5px_rgba(0,0,0,0.3),0_24px_48px_-12px_rgba(0,0,0,0.5),0_12px_24px_-8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.05)]"
+      class="absolute inset-0 rounded-xl border border-glass-border bg-glass-bg backdrop-blur-[40px] backdrop-saturate-[180%]"
     />
 
-    <div class="relative flex flex-col rounded-xl overflow-hidden">
+    <div class="relative flex flex-col h-full rounded-xl overflow-hidden">
       <!-- Header -->
       <header class="flex items-center justify-between px-3.5 py-3 border-b border-white/[0.04]">
         <div class="flex items-center gap-2">

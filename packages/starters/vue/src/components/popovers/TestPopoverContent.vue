@@ -6,14 +6,14 @@ const items = [5, 10, 20, 50, 100]
 </script>
 
 <template>
-  <!-- Root container with natural sizing (Rust handles screen bounds) -->
-  <div class="relative font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Text',sans-serif] text-[13px] antialiased">
+  <!-- Root container fills parent height for proper scroll behavior -->
+  <div class="relative h-full font-[-apple-system,BlinkMacSystemFont,'SF_Pro_Text',sans-serif] text-[13px] antialiased">
     <!-- Glass background -->
     <div
-      class="absolute inset-0 rounded-xl border border-glass-border bg-glass-bg backdrop-blur-[40px] backdrop-saturate-[180%] shadow-[0_0_0_0.5px_rgba(0,0,0,0.3),0_24px_48px_-12px_rgba(0,0,0,0.5),0_12px_24px_-8px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.05)]"
+      class="absolute inset-0 rounded-xl border border-glass-border bg-glass-bg backdrop-blur-[40px] backdrop-saturate-[180%]"
     />
 
-    <div class="relative flex flex-col rounded-xl overflow-hidden min-w-[320px]">
+    <div class="relative flex flex-col h-full rounded-xl overflow-hidden min-w-[320px]">
       <!-- Header (fixed) -->
       <header class="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-white/[0.04]">
         <span class="text-text-primary font-semibold">Max Size Test</span>
