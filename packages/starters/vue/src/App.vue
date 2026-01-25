@@ -115,8 +115,8 @@ useCoordinator({ autoHide: !isPopover.value })
 
         <!-- Right section: System indicators -->
         <div class="flex items-center gap-1 z-10">
-          <TestPopover />
-          <TestPopover />
+          <TestPopover popoverId="test-popover1" />
+          <TestPopover popoverId="test-popover2" />
           <div class="w-px h-4 bg-[var(--glass-border)] mx-1" />
           <Disk />
           <Cpu />
@@ -136,8 +136,11 @@ useCoordinator({ autoHide: !isPopover.value })
     <GitHubNotificationsPopover />
   </Popover>
 
-  <!-- Test Popover -->
-  <Popover id="test-popover">
+  <!-- Test Popovers -->
+  <Popover id="test-popover1">
+    <TestPopoverContent />
+  </Popover>
+  <Popover id="test-popover2">
     <TestPopoverContent />
   </Popover>
 

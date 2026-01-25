@@ -262,27 +262,62 @@ pub fn run() {
                     }
                 );
 
+                // Observer for app deactivation (close popovers when clicking outside Arcana)
+                define_class!(
+                    #[unsafe(super(NSObject))]
+                    #[name = "AppDeactivateObserver"]
+                    #[ivars = ()]
+                    struct AppDeactivateObserver;
+
+                    impl AppDeactivateObserver {
+                        #[unsafe(method(appDidResignActive:))]
+                        fn app_did_resign_active(&self, _notification: &NSNotification) {
+                            if let Some(handle) = GLOBAL_APP_HANDLE.get() {
+                                let _ = close_all_popovers(handle.clone());
+                            }
+                        }
+                    }
+                );
+
                 static REGISTER_OBSERVER: Once = Once::new();
 
                 REGISTER_OBSERVER.call_once(|| {
-                    let observer: Retained<ScreenChangeObserver> = unsafe {
+                    // Screen change observer
+                    let screen_observer: Retained<ScreenChangeObserver> = unsafe {
                         msg_send![ScreenChangeObserver::alloc(), init]
                     };
 
                     let center = NSNotificationCenter::defaultCenter();
-                    let name = NSString::from_str("NSApplicationDidChangeScreenParametersNotification");
+                    let screen_name = NSString::from_str("NSApplicationDidChangeScreenParametersNotification");
 
                     unsafe {
                         center.addObserver_selector_name_object(
-                            &observer,
+                            &screen_observer,
                             sel!(screenDidChange:),
-                            Some(&name),
+                            Some(&screen_name),
                             None,
                         );
                     }
 
-                    // Leak observer to keep it alive
-                    std::mem::forget(observer);
+                    // App deactivate observer (close popovers when app loses focus)
+                    let deactivate_observer: Retained<AppDeactivateObserver> = unsafe {
+                        msg_send![AppDeactivateObserver::alloc(), init]
+                    };
+
+                    let deactivate_name = NSString::from_str("NSApplicationDidResignActiveNotification");
+
+                    unsafe {
+                        center.addObserver_selector_name_object(
+                            &deactivate_observer,
+                            sel!(appDidResignActive:),
+                            Some(&deactivate_name),
+                            None,
+                        );
+                    }
+
+                    // Leak observers to keep them alive
+                    std::mem::forget(screen_observer);
+                    std::mem::forget(deactivate_observer);
                 });
             }
 

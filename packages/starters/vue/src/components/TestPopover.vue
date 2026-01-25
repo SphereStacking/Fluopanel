@@ -5,6 +5,11 @@ import { usePopover } from '@arcana/vue'
 
 const triggerRef = ref<HTMLElement | null>(null)
 
+const props = defineProps<{
+  popoverId: string
+  // Define any props if needed
+}>()
+
 const popover = usePopover({
   width: 300,
   height: 200,
@@ -15,7 +20,7 @@ const popover = usePopover({
 
 async function openPopover() {
   if (triggerRef.value) {
-    await popover.toggle('test-popover', triggerRef.value)
+    await popover.toggle(props.popoverId , triggerRef.value)
   }
 }
 </script>
