@@ -1,21 +1,28 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Window, useCoordinator, Popover, usePopoverMode, usePopover } from '@arcana/vue'
+import { Window, useCoordinator, Popover, usePopoverMode, useNativeMenu } from '@arcana/vue'
+import { executeShell } from '@arcana/core'
 
-// Settings menu popover
-const settingsMenuRef = ref<HTMLElement | null>(null)
-const settingsPopover = usePopover({
-  width: 200,
-  height: 190,
-  align: 'start',
-  offsetY: 8,
+// Native settings menu - SF Symbols in label (no icon image needed)
+const settingsMenu = useNativeMenu({
+  items: [
+    { id: 'arcana', label: '􀍟 Arcana 設定', accelerator: 'CmdOrCtrl+,' },
+    { id: 'aerospace', label: '􀏜 Aerospace 設定' },
+    { type: 'separator' },
+    { id: 'zshrc', label: '􀪏 .zshrc' },
+    { id: 'claude', label: '􀈕 .claude/' },
+  ],
+  onSelect: async (id) => {
+    const commands: Record<string, string> = {
+      arcana: 'code ~/.config/arcana/config.json',
+      aerospace: 'code ~/.config/aerospace/aerospace.toml',
+      zshrc: 'code ~/.zshrc',
+      claude: 'code ~/.claude',
+    }
+    if (commands[id]) {
+      await executeShell(commands[id])
+    }
+  },
 })
-
-const toggleSettingsMenu = () => {
-  if (settingsMenuRef.value) {
-    settingsPopover.toggle('settings-menu', settingsMenuRef.value)
-  }
-}
 
 // Bar components
 import Workspaces from './components/Workspaces.vue'
@@ -35,7 +42,6 @@ import GitHub from './components/GitHub.vue'
 import GitHubPRsPopover from './components/popovers/GitHubPRsPopover.vue'
 import GitHubNotificationsPopover from './components/popovers/GitHubNotificationsPopover.vue'
 import TestPopoverContent from './components/popovers/TestPopoverContent.vue'
-import SettingsMenuPopover from './components/popovers/SettingsMenuPopover.vue'
 
 const { isPopover } = usePopoverMode()
 
@@ -79,9 +85,8 @@ useCoordinator({ autoHide: !isPopover.value })
 
         <!-- Left section: Logo, Workspaces, Active App -->
         <div class="flex items-center gap-2 z-10">
-          <!-- Apple Logo - Settings Menu -->
+          <!-- Apple Logo - Settings Menu (Native) -->
           <div
-            ref="settingsMenuRef"
             class="
               flex items-center justify-center w-7 h-7
               rounded-lg cursor-pointer
@@ -89,7 +94,7 @@ useCoordinator({ autoHide: !isPopover.value })
               hover:bg-[var(--widget-glass-hover)]
               group
             "
-            @click="toggleSettingsMenu"
+            @click="settingsMenu.popup()"
           >
             <span
               class="
@@ -146,10 +151,6 @@ useCoordinator({ autoHide: !isPopover.value })
     <TestPopoverContent />
   </Popover>
 
-  <!-- Settings Menu Popover -->
-  <Popover id="settings-menu">
-    <SettingsMenuPopover />
-  </Popover>
 </template>
 
 <style scoped>

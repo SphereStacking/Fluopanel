@@ -17,6 +17,8 @@
     "core:window:allow-create",
     "core:webview:default",
     "shell:allow-open",
+    "core:menu:default",
+    "core:image:default",
     "mcp-bridge:default"
   ]
 }

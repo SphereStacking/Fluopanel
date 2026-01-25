@@ -7,6 +7,16 @@ export { useWindowMode, useCoordinator } from './composables/useWindowMode'
 export { usePopover, usePopoverMode, type UsePopoverOptions, type UsePopoverReturn, type PopoverAnchor, type PopoverAlign } from './composables/usePopover'
 export { useSharedStore, type UseSharedStoreReturn } from './composables/useSharedStore'
 export { useAutoSize, type UseAutoSizeOptions, type UseAutoSizeReturn } from './composables/useAutoSize'
+export {
+  useNativeMenu,
+  type NativeMenuItemDef,
+  type NativeMenuAction,
+  type NativeMenuSeparator,
+  type NativeMenuSubmenu,
+  type NativeMenuCheck,
+  type UseNativeMenuOptions,
+  type UseNativeMenuReturn,
+} from './composables/useNativeMenu'
 
 // Provider composables
 export {
