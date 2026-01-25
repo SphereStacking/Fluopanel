@@ -26,7 +26,7 @@ const settingsMenu = useNativeMenu({
 
 // Bar components
 import Workspaces from './components/Workspaces.vue'
-import FrontApp from './components/FrontApp.vue'
+import ActiveApp from './components/ActiveApp.vue'
 import Clock from './components/Clock.vue'
 import Battery from './components/Battery.vue'
 import Cpu from './components/Cpu.vue'
@@ -110,7 +110,7 @@ useCoordinator({ autoHide: !isPopover.value })
           <div class="w-px h-4 bg-[var(--glass-border)]" />
 
           <Workspaces />
-          <FrontApp />
+          <ActiveApp />
         </nav>
 
         <!-- Center section: Media & Clock -->
