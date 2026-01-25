@@ -32,7 +32,12 @@ useAutoSize(contentRef, {
   <div
     v-if="shouldRenderContent"
     ref="contentRef"
-    style="width: fit-content; height: fit-content"
+    :style="{
+      width: 'fit-content',
+      height: 'fit-content',
+      maxHeight: popoverContext.maxHeight ? `${popoverContext.maxHeight}px` : undefined,
+      overflow: 'hidden',
+    }"
   >
     <slot />
   </div>
