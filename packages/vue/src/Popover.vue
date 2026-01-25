@@ -56,7 +56,7 @@ const { height } = useAutoSize(contentRef, {
     }"
   >
     <!-- Key changes on reopen to force slot re-render and replay animations -->
-    <div :key="animationKey">
+    <div :key="animationKey" class="h-full">
       <slot />
     </div>
   </div>
