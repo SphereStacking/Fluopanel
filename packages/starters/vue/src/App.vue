@@ -29,6 +29,7 @@ import Disk from './components/Disk.vue'
 import Bluetooth from './components/Bluetooth.vue'
 import TestPopover from './components/TestPopover.vue'
 import YouTubeMusic from './components/YouTubeMusic.vue'
+import GitHub from './components/GitHub.vue'
 
 // Popover components
 import GitHubPRsPopover from './components/popovers/GitHubPRsPopover.vue'
@@ -117,6 +118,7 @@ useCoordinator({ autoHide: !isPopover.value })
         <div class="flex items-center gap-1 z-10">
           <TestPopover popoverId="test-popover1" />
           <TestPopover popoverId="test-popover2" />
+          <GitHub />
           <div class="w-px h-4 bg-[var(--glass-border)] mx-1" />
           <Disk />
           <Cpu />

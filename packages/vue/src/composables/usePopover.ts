@@ -30,10 +30,10 @@ export function usePopoverMode() {
 }
 
 export interface UsePopoverOptions {
-  /** Popover width in pixels */
-  width: number
-  /** Popover height in pixels */
-  height: number
+  /** Initial popover width in pixels (default: 300, auto-resized by content) */
+  width?: number
+  /** Initial popover height in pixels (default: 200, auto-resized by content) */
+  height?: number
   /** Alignment relative to anchor (default: 'end') */
   align?: PopoverAlign
   /** Vertical offset from anchor (default: 8) */
@@ -82,7 +82,7 @@ async function getAnchorFromElement(triggerElement: HTMLElement): Promise<Popove
  * Vue composable for managing popovers (Toggle mode).
  * Click to open/close, blur automatically closes.
  */
-export function usePopover(options: UsePopoverOptions): UsePopoverReturn {
+export function usePopover(options: UsePopoverOptions = {}): UsePopoverReturn {
   const { width, height, align = 'end', offsetY = 8, exclusive = false } = options
 
   const controller = createPopoverController()

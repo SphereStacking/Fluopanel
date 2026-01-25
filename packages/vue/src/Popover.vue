@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { getPopoverContext } from '@arcana/core'
+import { useAutoSize } from './composables/useAutoSize'
 
 const props = defineProps<{
   /** Popover identifier (must match the ID used in usePopover.toggle()) */
@@ -16,9 +17,23 @@ const popoverContext = getPopoverContext()
 const shouldRenderContent = computed(() => {
   return popoverContext.isPopover && popoverContext.id === props.id
 })
+
+// Auto-size the popover window based on content
+// maxHeight is calculated by Rust side based on anchor position and screen bounds
+const contentRef = ref<HTMLElement | null>(null)
+useAutoSize(contentRef, {
+  enabled: shouldRenderContent,
+  maxHeight: popoverContext.maxHeight ?? undefined,
+})
 </script>
 
 <template>
   <!-- Only render slot content when this is the active popover -->
-  <slot v-if="shouldRenderContent" />
+  <div
+    v-if="shouldRenderContent"
+    ref="contentRef"
+    style="width: fit-content; height: fit-content"
+  >
+    <slot />
+  </div>
 </template>

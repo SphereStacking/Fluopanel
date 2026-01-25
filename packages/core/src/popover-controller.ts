@@ -13,15 +13,18 @@ import type {
  */
 export function getPopoverContext(): PopoverContext {
   if (typeof window === 'undefined') {
-    return { id: null, isPopover: false }
+    return { id: null, isPopover: false, maxHeight: null }
   }
 
   const params = new URLSearchParams(window.location.search)
   const popoverId = params.get('popover')
+  const maxHeightParam = params.get('maxHeight')
+  const maxHeight = maxHeightParam ? parseInt(maxHeightParam, 10) : null
 
   return {
     id: popoverId,
     isPopover: popoverId !== null,
+    maxHeight: maxHeight && !isNaN(maxHeight) ? maxHeight : null,
   }
 }
 
@@ -47,8 +50,8 @@ export async function openPopover(options: PopoverOpenOptions): Promise<PopoverI
   const params = {
     popoverId: options.id,
     anchor: options.anchor,
-    width: options.width,
-    height: options.height,
+    width: options.width ?? 300,
+    height: options.height ?? 200,
     align: options.align ?? 'center',
     offsetY: options.offsetY ?? 8,
   }

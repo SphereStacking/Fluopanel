@@ -102,7 +102,13 @@ pub fn set_window_position(
     Ok(())
 }
 
+/// Shadow padding constant (p-20 = 80px each side = 160px total)
+const SHADOW_PADDING: f64 = 160.0;
+/// Top margin for menu bar area
+const TOP_MARGIN: f64 = 80.0;
+
 /// Set only the size (width, height) of a window - called by frontend based on content
+/// Automatically clamps to screen bounds to prevent content overflow
 #[tauri::command]
 pub fn set_window_size(
     app: tauri::AppHandle,
@@ -120,10 +126,31 @@ pub fn set_window_size(
         window
     };
 
+    // Popover windows are already clamped by popover.rs (accurate maxHeight based on anchor position)
+    // and useAutoSize (clamps content to maxHeight). Skip additional constraints here.
+    let is_popover = target_window.label().starts_with("popover-");
+
+    let (constrained_width, constrained_height) = if is_popover {
+        // Popover: use size as-is (already properly constrained)
+        (width as f64, height as f64)
+    } else if let Ok(Some(monitor)) = target_window.current_monitor() {
+        // Regular windows: apply screen bounds constraint
+        let scale = monitor.scale_factor();
+        let monitor_width = monitor.size().width as f64 / scale;
+        let monitor_height = monitor.size().height as f64 / scale;
+
+        let max_width = monitor_width - SHADOW_PADDING;
+        let max_height = monitor_height - SHADOW_PADDING - TOP_MARGIN;
+
+        ((width as f64).min(max_width), (height as f64).min(max_height))
+    } else {
+        (width as f64, height as f64)
+    };
+
     target_window
         .set_size(tauri::Size::Logical(tauri::LogicalSize {
-            width: width as f64,
-            height: height as f64,
+            width: constrained_width,
+            height: constrained_height,
         }))
         .map_err(|e: tauri::Error| e.to_string())?;
 

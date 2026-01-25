@@ -153,10 +153,10 @@ export interface PopoverOpenOptions {
   id: string
   /** Anchor element position */
   anchor: PopoverAnchor
-  /** Popover width in pixels */
-  width: number
-  /** Popover height in pixels */
-  height: number
+  /** Initial popover width in pixels (default: 300, auto-resized by content) */
+  width?: number
+  /** Initial popover height in pixels (default: 200, auto-resized by content) */
+  height?: number
   /** Alignment relative to anchor (default: 'center') */
   align?: PopoverAlign
   /** Vertical offset from anchor (default: 8) */
@@ -169,6 +169,8 @@ export interface PopoverInfo {
   label: string
   /** Whether the popover was closed (toggle mode) */
   closed: boolean
+  /** Maximum available height for the popover (from anchor bottom to screen bottom) */
+  maxHeight: number
 }
 
 /** Popover context for determining current window type */
@@ -177,4 +179,6 @@ export interface PopoverContext {
   id: string | null
   /** Whether current window is a popover */
   isPopover: boolean
+  /** Maximum available height for the popover (from URL parameter) */
+  maxHeight: number | null
 }

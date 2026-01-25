@@ -45,7 +45,14 @@ pub struct PopoverInfo {
     pub id: String,
     pub label: String,
     pub closed: bool,
+    /// Maximum available height for the popover (from anchor bottom to screen bottom)
+    pub max_height: f64,
 }
+
+/// Shadow padding constant (p-20 = 80px each side = 160px total)
+const SHADOW_PADDING: f64 = 160.0;
+/// Top margin for menu bar area
+const TOP_MARGIN: f64 = 80.0;
 
 /// Get monitor info containing the anchor point
 fn get_monitor_at_point(app: &AppHandle, x: f64, y: f64) -> Result<(f64, f64, f64, f64), String> {
@@ -145,15 +152,23 @@ pub fn open_popover(
                     id: popover_id,
                     label,
                     closed: true,
+                    max_height: 0.0,
                 });
             } else {
-                // Toggle on: update position and show
+                // Toggle on: update position, size, and show
                 let (monitor_x, monitor_y, monitor_width, monitor_height) =
                     get_monitor_at_point(&app, anchor.x, anchor.y)?;
+
+                // Clamp size to screen bounds
+                let max_width = monitor_width - SHADOW_PADDING;
+                let max_height = monitor_height - SHADOW_PADDING - TOP_MARGIN;
+                let constrained_width = width.min(max_width);
+                let constrained_height = height.min(max_height);
+
                 let (x, y) = calculate_popover_position(
                     &anchor,
-                    width,
-                    height,
+                    constrained_width,
+                    constrained_height,
                     &align,
                     offset_y,
                     monitor_x,
@@ -163,12 +178,18 @@ pub fn open_popover(
                 );
                 if let Some(window) = app.get_webview_window(&label) {
                     let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition { x, y }));
+                    // Don't reset size - keep the auto-sized dimensions from previous show
                 }
+                // Calculate max available height from anchor bottom to screen bottom
+                let popover_top = anchor.y + anchor.height + offset_y;
+                let available_max_height = (monitor_y + monitor_height - popover_top).max(100.0);
+
                 panel.show();
                 return Ok(PopoverInfo {
                     id: popover_id,
                     label,
                     closed: false,
+                    max_height: available_max_height,
                 });
             }
         }
@@ -184,6 +205,7 @@ pub fn open_popover(
                 id: popover_id,
                 label,
                 closed: true,
+                max_height: 0.0,
             });
         }
     }
@@ -192,11 +214,17 @@ pub fn open_popover(
     let (monitor_x, monitor_y, monitor_width, monitor_height) =
         get_monitor_at_point(&app, anchor.x, anchor.y)?;
 
-    // Calculate position
+    // Clamp size to screen bounds
+    let max_width = monitor_width - SHADOW_PADDING;
+    let max_height = monitor_height - SHADOW_PADDING - TOP_MARGIN;
+    let constrained_width = width.min(max_width);
+    let constrained_height = height.min(max_height);
+
+    // Calculate position with constrained size
     let (x, y) = calculate_popover_position(
         &anchor,
-        width,
-        height,
+        constrained_width,
+        constrained_height,
         &align,
         offset_y,
         monitor_x,
@@ -205,11 +233,15 @@ pub fn open_popover(
         monitor_height,
     );
 
-    // Build URL with popover parameter
+    // Calculate max available height from anchor bottom to screen bottom
+    let popover_top = anchor.y + anchor.height + offset_y;
+    let available_max_height = (monitor_y + monitor_height - popover_top).max(100.0);
+
+    // Build URL with popover parameter and maxHeight
     let url = if cfg!(debug_assertions) {
-        format!("http://localhost:1420/?popover={}", popover_id)
+        format!("http://localhost:1420/?popover={}&maxHeight={}", popover_id, available_max_height as u32)
     } else {
-        format!("arcana://localhost/?popover={}", popover_id)
+        format!("arcana://localhost/?popover={}&maxHeight={}", popover_id, available_max_height as u32)
     };
 
     let webview_url = WebviewUrl::External(url.parse().map_err(|e| format!("Invalid URL: {}", e))?);
@@ -230,7 +262,10 @@ pub fn open_popover(
             .becomes_key_only_if_needed(false)
             .with_window(|w| w.decorations(false).transparent(true))
             .position(tauri::Position::Logical(tauri::LogicalPosition { x, y }))
-            .size(tauri::Size::Logical(tauri::LogicalSize { width, height }))
+            .size(tauri::Size::Logical(tauri::LogicalSize {
+                width: constrained_width,
+                height: constrained_height,
+            }))
             .build()
             .map_err(|e| e.to_string())?;
 
@@ -261,7 +296,7 @@ pub fn open_popover(
             .visible(true)
             .focused(true)
             .position(x, y)
-            .inner_size(width, height)
+            .inner_size(constrained_width, constrained_height)
             .build()
             .map_err(|e| e.to_string())?;
 
@@ -291,6 +326,7 @@ pub fn open_popover(
         id: popover_id,
         label,
         closed: false,
+        max_height: available_max_height,
     })
 }
 
