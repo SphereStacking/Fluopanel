@@ -3,6 +3,14 @@ import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useBatteryProvider } from '@arcana/vue'
 
+interface Props {
+  direction?: 'horizontal' | 'vertical'
+}
+const props = withDefaults(defineProps<Props>(), {
+  direction: 'horizontal',
+})
+const isVertical = computed(() => props.direction === 'vertical')
+
 const { data: battery } = useBatteryProvider()
 
 const icon = computed(() => {
@@ -36,8 +44,9 @@ const statusColor = computed(() => {
 </script>
 
 <template>
+  <!-- Horizontal: icon + text -->
   <figure
-    v-if="battery"
+    v-if="battery && !isVertical"
     class="
       flex items-center gap-1.5 py-1 px-2.5 rounded-lg
       text-[12px] tracking-wide
@@ -56,4 +65,18 @@ const statusColor = computed(() => {
       class="font-medium tabular-nums min-w-[3ch] text-right text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors duration-200"
     >{{ percentText }}</figcaption>
   </figure>
+
+  <!-- Vertical: icon only with title -->
+  <button
+    v-else-if="battery && isVertical"
+    type="button"
+    class="p-1.5 rounded-lg hover:bg-[var(--widget-glass-hover)] transition-colors"
+    :title="`Battery: ${percentText}${battery.charging ? ' (Charging)' : ''}`"
+  >
+    <Icon
+      :icon="icon"
+      class="w-4 h-4 transition-colors duration-200"
+      :class="[statusColor, { 'animate-pulse': battery.charging }]"
+    />
+  </button>
 </template>

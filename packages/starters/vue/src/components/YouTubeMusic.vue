@@ -3,7 +3,16 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useYouTubeMusicProvider } from '@arcana/vue'
 
-const { data: music, toggle, next, previous, seek } = useYouTubeMusicProvider()
+interface Props {
+  direction?: 'horizontal' | 'vertical'
+}
+const props = withDefaults(defineProps<Props>(), {
+  direction: 'horizontal'
+})
+
+const isVertical = computed(() => props.direction === 'vertical')
+
+const { data: music, toggle, next, previous, seek, launch } = useYouTubeMusicProvider()
 
 let positionInterval: ReturnType<typeof setInterval> | null = null
 
@@ -47,8 +56,6 @@ const displayText = computed(() => {
 const needsMarquee = computed(() => {
   return displayText.value ? displayText.value.length > 20 : false
 })
-
-
 
 // Progress percentage (0-100)
 const progress = computed(() => {
@@ -108,16 +115,18 @@ const onSeekChange = async (e: Event) => {
 </script>
 
 <template>
-  <section
+  <!-- Music Playing State -->
+  <component
+    :is="isVertical ? 'div' : 'section'"
     v-if="music?.title"
-    class="
-      flex items-center gap-2 py-1.5 px-3
-      rounded-xl
-      group
-    "
+    class="flex group"
+    :class="isVertical
+      ? 'flex-col items-center gap-0.5'
+      : 'items-center gap-2 py-1.5 px-3 rounded-xl'"
+    :title="isVertical ? displayText || 'YouTube Music' : undefined"
   >
     <!-- Album Artwork -->
-    <div class="relative shrink-0">
+    <div class="relative shrink-0" :class="isVertical ? 'mb-0.5' : ''">
       <div
         class="
           w-7 h-7 rounded-lg overflow-hidden
@@ -161,8 +170,8 @@ const onSeekChange = async (e: Event) => {
       />
     </div>
 
-    <!-- Controls -->
-    <div class="flex items-center gap-1">
+    <!-- Controls - Horizontal: wrapped in div, Vertical: direct children -->
+    <template v-if="isVertical">
       <!-- Previous -->
       <button
         @click="handlePrev"
@@ -175,23 +184,24 @@ const onSeekChange = async (e: Event) => {
           focus:outline-none
         "
       >
-        <Icon icon="mdi:skip-previous" class="w-[14px] h-[14px]" />
+        <Icon icon="mdi:skip-previous" class="w-3.5 h-3.5" />
       </button>
 
       <!-- Play/Pause -->
       <button
         @click="togglePlay"
         class="
-          p-0.5
+          p-1 rounded-lg
           transition-all duration-200
           hover:scale-110
+          hover:bg-[var(--widget-glass-hover)]
           focus:outline-none
         "
         :class="music.playing
           ? 'text-[var(--danger)] drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]'
           : 'text-[var(--text-secondary)] hover:text-[var(--danger)]'"
       >
-        <Icon :icon="icon" class="w-[16px] h-[16px]" />
+        <Icon :icon="icon" class="w-4 h-4" />
       </button>
 
       <!-- Next -->
@@ -206,59 +216,131 @@ const onSeekChange = async (e: Event) => {
           focus:outline-none
         "
       >
-        <Icon icon="mdi:skip-next" class="w-[14px] h-[14px]" />
+        <Icon icon="mdi:skip-next" class="w-3.5 h-3.5" />
       </button>
-    </div>
+    </template>
 
-    <!-- Divider -->
-    <div class="w-px h-5 bg-[var(--glass-border)]" />
-
-    <!-- Track Info & Progress -->
-    <div class="flex flex-col gap-0.5 min-w-0 max-w-[160px]">
-      <!-- Title & Artist with marquee -->
-      <div class="overflow-hidden marquee-container">
-        <div
+    <!-- Horizontal Controls -->
+    <template v-else>
+      <div class="flex items-center gap-1">
+        <!-- Previous -->
+        <button
+          @click="handlePrev"
           class="
-            inline-flex whitespace-nowrap
-            text-[11px] font-medium leading-tight
-            text-[var(--text-secondary)]
-            transition-colors duration-200
-            group-hover:text-[var(--text-primary)]
+            p-0.5
+            text-[var(--text-tertiary)]
+            hover:text-[var(--danger)]
+            transition-all duration-200
+            hover:scale-110
+            focus:outline-none
           "
-          :class="needsMarquee ? 'will-change-transform group-hover:animate-[marquee_6s_linear_infinite]' : ''"
         >
-          <span>{{ displayText }}</span>
-          <span v-if="needsMarquee" class="ml-8">{{ displayText }}</span>
-        </div>
+          <Icon icon="mdi:skip-previous" class="w-[14px] h-[14px]" />
+        </button>
+
+        <!-- Play/Pause -->
+        <button
+          @click="togglePlay"
+          class="
+            p-0.5
+            transition-all duration-200
+            hover:scale-110
+            focus:outline-none
+          "
+          :class="music.playing
+            ? 'text-[var(--danger)] drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]'
+            : 'text-[var(--text-secondary)] hover:text-[var(--danger)]'"
+        >
+          <Icon :icon="icon" class="w-[16px] h-[16px]" />
+        </button>
+
+        <!-- Next -->
+        <button
+          @click="handleNext"
+          class="
+            p-0.5
+            text-[var(--text-tertiary)]
+            hover:text-[var(--danger)]
+            transition-all duration-200
+            hover:scale-110
+            focus:outline-none
+          "
+        >
+          <Icon icon="mdi:skip-next" class="w-[14px] h-[14px]" />
+        </button>
       </div>
 
-      <!-- Progress Slider -->
-      <input
-        type="range"
-        :min="0"
-        :max="music.duration || 0"
-        :value="localPosition"
-        @input="onSeekInput"
-        @change="onSeekChange"
-        class="
-          w-full h-[3px] appearance-none cursor-pointer
-          bg-[var(--glass-border)] rounded-full
-          [&::-webkit-slider-thumb]:appearance-none
-          [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:h-2
-          [&::-webkit-slider-thumb]:rounded-full
-          [&::-webkit-slider-thumb]:bg-[var(--danger)]
-          [&::-webkit-slider-thumb]:shadow-[0_0_4px_rgba(248,113,113,0.5)]
-          [&::-webkit-slider-thumb]:transition-transform
-          [&::-webkit-slider-thumb]:duration-150
-          [&::-webkit-slider-thumb]:hover:scale-125
-          [&::-webkit-slider-thumb]:-mt-[2.5px]
-          [&::-webkit-slider-runnable-track]:h-[3px]
-          [&::-webkit-slider-runnable-track]:rounded-full
-        "
-        :style="{
-          background: `linear-gradient(to right, #f87171 0%, #fca5a5 ${progress}%, var(--glass-border) ${progress}%)`
-        }"
-      />
-    </div>
-  </section>
+      <!-- Divider -->
+      <div class="w-px h-5 bg-[var(--glass-border)]" />
+
+      <!-- Track Info & Progress -->
+      <div class="flex flex-col gap-0.5 min-w-0 max-w-[160px]">
+        <!-- Title & Artist with marquee -->
+        <div class="overflow-hidden marquee-container">
+          <div
+            class="
+              inline-flex whitespace-nowrap
+              text-[11px] font-medium leading-tight
+              text-[var(--text-secondary)]
+              transition-colors duration-200
+              group-hover:text-[var(--text-primary)]
+            "
+            :class="needsMarquee ? 'will-change-transform group-hover:animate-[marquee_6s_linear_infinite]' : ''"
+          >
+            <span>{{ displayText }}</span>
+            <span v-if="needsMarquee" class="ml-8">{{ displayText }}</span>
+          </div>
+        </div>
+
+        <!-- Progress Slider -->
+        <input
+          type="range"
+          :min="0"
+          :max="music.duration || 0"
+          :value="localPosition"
+          @input="onSeekInput"
+          @change="onSeekChange"
+          class="
+            w-full h-[3px] appearance-none cursor-pointer
+            bg-[var(--glass-border)] rounded-full
+            [&::-webkit-slider-thumb]:appearance-none
+            [&::-webkit-slider-thumb]:w-2 [&::-webkit-slider-thumb]:h-2
+            [&::-webkit-slider-thumb]:rounded-full
+            [&::-webkit-slider-thumb]:bg-[var(--danger)]
+            [&::-webkit-slider-thumb]:shadow-[0_0_4px_rgba(248,113,113,0.5)]
+            [&::-webkit-slider-thumb]:transition-transform
+            [&::-webkit-slider-thumb]:duration-150
+            [&::-webkit-slider-thumb]:hover:scale-125
+            [&::-webkit-slider-thumb]:-mt-[2.5px]
+            [&::-webkit-slider-runnable-track]:h-[3px]
+            [&::-webkit-slider-runnable-track]:rounded-full
+          "
+          :style="{
+            background: `linear-gradient(to right, #f87171 0%, #fca5a5 ${progress}%, var(--glass-border) ${progress}%)`
+          }"
+        />
+      </div>
+    </template>
+  </component>
+
+  <!-- No Music State - Show YouTube Music icon -->
+  <button
+    v-else
+    @click="launch"
+    class="
+      rounded-lg
+      transition-all duration-200
+      hover:bg-[var(--widget-glass-hover)]
+      cursor-pointer
+      text-[var(--text-ghost)]
+      hover:text-[var(--danger)]
+      group
+    "
+    :class="isVertical
+      ? 'p-1.5 hover:scale-110 focus:outline-none'
+      : 'flex items-center gap-1.5 py-1 px-2'"
+    title="Launch YouTube Music"
+  >
+    <Icon icon="simple-icons:youtubemusic" class="w-5 h-5" />
+  </button>
 </template>

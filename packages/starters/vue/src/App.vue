@@ -6,9 +6,9 @@ import HorizontalBar from './components/bars/HorizontalBar.vue'
 import VerticalBar from './components/bars/VerticalBar.vue'
 
 // Popover components
+import GitHubIssuesPopover from './components/popovers/GitHubIssuesPopover.vue'
 import GitHubPRsPopover from './components/popovers/GitHubPRsPopover.vue'
 import GitHubNotificationsPopover from './components/popovers/GitHubNotificationsPopover.vue'
-import TestPopoverContent from './components/popovers/TestPopoverContent.vue'
 
 const { isPopover } = usePopoverMode()
 
@@ -35,19 +35,14 @@ useCoordinator({ autoHide: !isPopover.value })
   </Window>
 
   <!-- GitHub Popovers -->
+  <Popover id="github-issues">
+    <GitHubIssuesPopover />
+  </Popover>
   <Popover id="github-prs">
     <GitHubPRsPopover />
   </Popover>
   <Popover id="github-notifications">
     <GitHubNotificationsPopover />
-  </Popover>
-
-  <!-- Test Popovers -->
-  <Popover id="test-popover1">
-    <TestPopoverContent />
-  </Popover>
-  <Popover id="test-popover2">
-    <TestPopoverContent />
   </Popover>
 
 </template>

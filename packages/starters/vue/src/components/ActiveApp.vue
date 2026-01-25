@@ -1,7 +1,16 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useActiveAppProvider } from '@arcana/vue'
+
+interface Props {
+  direction?: 'horizontal' | 'vertical'
+}
+const props = withDefaults(defineProps<Props>(), {
+  direction: 'horizontal'
+})
+
+const isVertical = computed(() => props.direction === 'vertical')
 
 const { data: activeApp } = useActiveAppProvider()
 const appIcon = ref<string | null>(null)
@@ -25,8 +34,39 @@ watch(activeApp, (newApp, oldApp) => {
 </script>
 
 <template>
+  <!-- Vertical: icon only button -->
+  <button
+    v-if="isVertical && activeApp && appIcon"
+    type="button"
+    class="
+      p-1.5 rounded-lg
+      transition-all duration-200
+      hover:bg-[var(--widget-glass-hover)]
+      group
+    "
+    :title="activeApp.name"
+  >
+    <div
+      class="
+        relative w-6 h-6
+        rounded-md overflow-hidden
+        ring-1 ring-white/10
+        shadow-[0_2px_8px_rgba(0,0,0,0.3)]
+        transition-transform duration-200
+        group-hover:scale-110
+      "
+    >
+      <img
+        :src="`data:image/png;base64,${appIcon}`"
+        :alt="activeApp.name"
+        class="w-full h-full object-cover"
+      />
+    </div>
+  </button>
+
+  <!-- Horizontal: icon + app name -->
   <section
-    v-if="activeApp"
+    v-else-if="!isVertical && activeApp"
     class="
       flex items-center gap-2 pl-2 pr-3 py-1
       rounded-lg

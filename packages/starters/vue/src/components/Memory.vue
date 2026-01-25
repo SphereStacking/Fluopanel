@@ -3,6 +3,14 @@ import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useMemoryProvider } from '@arcana/vue'
 
+interface Props {
+  direction?: 'horizontal' | 'vertical'
+}
+const props = withDefaults(defineProps<Props>(), {
+  direction: 'horizontal',
+})
+const isVertical = computed(() => props.direction === 'vertical')
+
 const { data: memory } = useMemoryProvider()
 
 const formatBytes = (bytes: number) => {
@@ -30,8 +38,9 @@ const glowClass = computed(() => {
 </script>
 
 <template>
+  <!-- Horizontal: icon + text -->
   <figure
-    v-if="memory"
+    v-if="memory && !isVertical"
     class="
       flex items-center gap-1.5 py-1 px-2.5 rounded-lg
       text-[12px] tracking-wide
@@ -48,4 +57,15 @@ const glowClass = computed(() => {
       :class="statusColor"
     >{{ usageText }}</figcaption>
   </figure>
+
+  <!-- Vertical: icon only with title -->
+  <button
+    v-else-if="memory && isVertical"
+    type="button"
+    class="p-1.5 rounded-lg hover:bg-[var(--widget-glass-hover)] transition-colors"
+    :class="glowClass"
+    :title="`Memory: ${usageText}`"
+  >
+    <Icon icon="mdi:memory" class="w-4 h-4" :class="statusColor" />
+  </button>
 </template>

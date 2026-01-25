@@ -3,6 +3,15 @@ import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useMediaProvider } from '@arcana/vue'
 
+interface Props {
+  direction?: 'horizontal' | 'vertical'
+}
+const props = withDefaults(defineProps<Props>(), {
+  direction: 'horizontal'
+})
+
+const isVertical = computed(() => props.direction === 'vertical')
+
 const { data: media, play, pause, next, previous } = useMediaProvider()
 
 const icon = computed(() => {
@@ -14,7 +23,11 @@ const displayText = computed(() => {
   if (!media.value?.title) return null
   const artist = media.value.artist ? ` - ${media.value.artist}` : ''
   const text = `${media.value.title}${artist}`
-  return text.length > 28 ? text.slice(0, 28) + '...' : text
+  // Only truncate for horizontal display
+  if (!isVertical.value && text.length > 28) {
+    return text.slice(0, 28) + '...'
+  }
+  return text
 })
 
 const togglePlay = async () => {
@@ -48,13 +61,14 @@ const handlePrev = async () => {
 </script>
 
 <template>
-  <section
+  <component
+    :is="isVertical ? 'div' : 'section'"
     v-if="media?.title"
-    class="
-      flex items-center gap-2 py-1 px-3
-      rounded-xl glass-widget
-      group
-    "
+    class="flex group"
+    :class="isVertical
+      ? 'flex-col items-center gap-0.5'
+      : 'items-center gap-2 py-1 px-3 rounded-xl glass-widget'"
+    :title="isVertical ? displayText || '' : undefined"
   >
     <!-- Previous button -->
     <button
@@ -66,8 +80,9 @@ const handlePrev = async () => {
         hover:scale-110
         focus:outline-none
       "
+      :class="isVertical ? 'p-1' : ''"
     >
-      <Icon icon="mdi:skip-previous" class="w-[14px] h-[14px]" />
+      <Icon icon="mdi:skip-previous" :class="isVertical ? 'w-3.5 h-3.5' : 'w-[14px] h-[14px]'" />
     </button>
 
     <!-- Play/Pause button with glow -->
@@ -79,11 +94,14 @@ const handlePrev = async () => {
         hover:scale-110
         focus:outline-none
       "
-      :class="media.playing
-        ? 'text-[var(--holo-cyan)] drop-shadow-[0_0_8px_var(--accent-glow)]'
-        : 'text-[var(--text-secondary)] hover:text-[var(--holo-cyan)]'"
+      :class="[
+        media.playing
+          ? 'text-[var(--holo-cyan)] drop-shadow-[0_0_8px_var(--accent-glow)]'
+          : 'text-[var(--text-secondary)] hover:text-[var(--holo-cyan)]',
+        isVertical ? 'p-1.5 rounded-lg hover:bg-[var(--widget-glass-hover)]' : ''
+      ]"
     >
-      <Icon :icon="icon" class="w-[18px] h-[18px]" />
+      <Icon :icon="icon" :class="isVertical ? 'w-5 h-5' : 'w-[18px] h-[18px]'" />
     </button>
 
     <!-- Next button -->
@@ -96,28 +114,32 @@ const handlePrev = async () => {
         hover:scale-110
         focus:outline-none
       "
+      :class="isVertical ? 'p-1' : ''"
     >
-      <Icon icon="mdi:skip-next" class="w-[14px] h-[14px]" />
+      <Icon icon="mdi:skip-next" :class="isVertical ? 'w-3.5 h-3.5' : 'w-[14px] h-[14px]'" />
     </button>
 
-    <!-- Divider -->
-    <div class="w-px h-4 bg-[var(--glass-border)] mx-1" />
+    <!-- Track info - horizontal only -->
+    <template v-if="!isVertical">
+      <!-- Divider -->
+      <div class="w-px h-4 bg-[var(--glass-border)] mx-1" />
 
-    <!-- Track info with marquee effect potential -->
-    <div class="flex items-center gap-2 max-w-[160px] overflow-hidden">
-      <!-- Music note icon -->
-      <Icon icon="mdi:music-note" class="w-3 h-3 text-[var(--holo-pink)] shrink-0" />
+      <!-- Track info with marquee effect potential -->
+      <div class="flex items-center gap-2 max-w-[160px] overflow-hidden">
+        <!-- Music note icon -->
+        <Icon icon="mdi:music-note" class="w-3 h-3 text-[var(--holo-pink)] shrink-0" />
 
-      <!-- Track title -->
-      <span
-        class="
-          text-[12px] font-medium tracking-wide
-          text-[var(--text-secondary)]
-          truncate
-          transition-colors duration-200
-          group-hover:text-[var(--text-primary)]
-        "
-      >{{ displayText }}</span>
-    </div>
-  </section>
+        <!-- Track title -->
+        <span
+          class="
+            text-[12px] font-medium tracking-wide
+            text-[var(--text-secondary)]
+            truncate
+            transition-colors duration-200
+            group-hover:text-[var(--text-primary)]
+          "
+        >{{ displayText }}</span>
+      </div>
+    </template>
+  </component>
 </template>

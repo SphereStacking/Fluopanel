@@ -25,6 +25,7 @@ const settingsMenu = useNativeMenu({
 })
 
 // Bar components
+import ArcanaIcon from '../icons/ArcanaIcon.vue'
 import Workspaces from '../Workspaces.vue'
 import ActiveApp from '../ActiveApp.vue'
 import Clock from '../Clock.vue'
@@ -33,8 +34,6 @@ import Cpu from '../Cpu.vue'
 import Memory from '../Memory.vue'
 import Media from '../Media.vue'
 import Disk from '../Disk.vue'
-import Bluetooth from '../Bluetooth.vue'
-import TestPopover from '../TestPopover.vue'
 import YouTubeMusic from '../YouTubeMusic.vue'
 import GitHub from '../GitHub.vue'
 </script>
@@ -68,7 +67,7 @@ import GitHub from '../GitHub.vue'
 
     <!-- Left section: Logo, Workspaces, Active App -->
     <nav class="flex items-center gap-2 z-10">
-      <!-- Apple Logo - Settings Menu (Native) -->
+      <!-- Arcana Logo - Settings Menu (Native) -->
       <button
         type="button"
         class="
@@ -80,14 +79,14 @@ import GitHub from '../GitHub.vue'
         "
         @click="settingsMenu.popup()"
       >
-        <span
+        <ArcanaIcon
           class="
-            icon-sf text-base
+            w-4 h-4
             text-[var(--text-secondary)]
             group-hover:text-[var(--holo-cyan)]
             transition-colors duration-300
           "
-        >􀣺</span>
+        />
       </button>
 
       <div class="w-px h-4 bg-[var(--glass-border)]" />
@@ -97,7 +96,7 @@ import GitHub from '../GitHub.vue'
     </nav>
 
     <!-- Center section: Media & Clock -->
-    <section class="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 z-10">
+    <section class="flex-1 flex items-center justify-center gap-3 z-10">
       <Media />
       <YouTubeMusic />
       <Clock />
@@ -105,13 +104,10 @@ import GitHub from '../GitHub.vue'
 
     <!-- Right section: System indicators -->
     <aside class="flex items-center gap-1 z-10">
-      <TestPopover popoverId="test-popover1" />
-      <TestPopover popoverId="test-popover2" />
       <GitHub />
       <div class="w-px h-4 bg-[var(--glass-border)] mx-1" />
       <Disk />
       <Cpu />
-      <Bluetooth />
       <Memory />
       <Battery />
     </aside>

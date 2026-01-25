@@ -1,7 +1,22 @@
 import type { YouTubeMusicInfo, Provider } from './types'
 
+// Tauri global API type
+declare const window: Window & {
+  __TAURI__?: {
+    core: {
+      invoke: (cmd: string, args?: Record<string, unknown>) => Promise<unknown>
+    }
+  }
+}
+
+// Pear Desktop API (port 26538)
 const PEAR_API = 'http://localhost:26538'
-const APP_ID = 'arcana'
+const PEAR_APP_ID = 'arcana'
+
+// YTM Desktop API (port 9863)
+const YTM_API = 'http://localhost:9863'
+
+type ApiType = 'pear' | 'ytm' | null
 
 export interface YouTubeMusicProvider extends Provider<YouTubeMusicInfo> {
   getInfo(): Promise<YouTubeMusicInfo>
@@ -9,8 +24,10 @@ export interface YouTubeMusicProvider extends Provider<YouTubeMusicInfo> {
   next(): Promise<void>
   previous(): Promise<void>
   seek(seconds: number): Promise<void>
+  launch(): Promise<void>
 }
 
+// Pear Desktop response format
 interface PearSongResponse {
   title?: string
   artist?: string
@@ -21,8 +38,25 @@ interface PearSongResponse {
   imageSrc?: string
 }
 
-interface AuthResponse {
+interface PearAuthResponse {
   accessToken: string
+}
+
+// YTM Desktop response format
+interface YtmQueryResponse {
+  player?: {
+    trackState?: number // 0: paused, 1: playing, 2: buffering
+    videoProgress?: number
+    volume?: number
+  }
+  track?: {
+    author?: string
+    title?: string
+    album?: string
+    cover?: string
+    duration?: number
+    durationHuman?: string
+  }
 }
 
 export function createYouTubeMusicProvider(): YouTubeMusicProvider {
@@ -30,29 +64,66 @@ export function createYouTubeMusicProvider(): YouTubeMusicProvider {
   const subscribers = new Set<(info: YouTubeMusicInfo) => void>()
   let lastInfo: YouTubeMusicInfo = { playing: false }
   let consecutiveFailures = 0
-  let token: string | null = null
+  let pearToken: string | null = null
+  let detectedApi: ApiType = null
   const MAX_FAILURES = 3
 
-  const authenticate = async (): Promise<string | null> => {
+  // Pear Desktop authentication
+  const authenticatePear = async (): Promise<string | null> => {
     try {
-      const res = await fetch(`${PEAR_API}/auth/${APP_ID}`, { method: 'POST' })
+      const res = await fetch(`${PEAR_API}/auth/${PEAR_APP_ID}`, { method: 'POST' })
       if (!res.ok) return null
-      const data: AuthResponse = await res.json()
+      const data: PearAuthResponse = await res.json()
       return data.accessToken
     } catch {
       return null
     }
   }
 
-  const getToken = async (): Promise<string | null> => {
-    if (token) return token
-    token = await authenticate()
-    return token
+  const getPearToken = async (): Promise<string | null> => {
+    if (pearToken) return pearToken
+    pearToken = await authenticatePear()
+    return pearToken
   }
 
-  const fetchInfo = async (): Promise<YouTubeMusicInfo | null> => {
+  // Detect which API is available
+  const detectApi = async (): Promise<ApiType> => {
+    if (detectedApi) return detectedApi
+
+    // Try YTM Desktop first (more common)
     try {
-      const accessToken = await getToken()
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 500)
+      const res = await fetch(`${YTM_API}/query`, {
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+      if (res.ok) {
+        detectedApi = 'ytm'
+        return 'ytm'
+      }
+    } catch {
+      // YTM not available
+    }
+
+    // Try Pear Desktop
+    try {
+      const token = await getPearToken()
+      if (token) {
+        detectedApi = 'pear'
+        return 'pear'
+      }
+    } catch {
+      // Pear not available
+    }
+
+    return null
+  }
+
+  // Fetch info from Pear Desktop
+  const fetchPearInfo = async (): Promise<YouTubeMusicInfo | null> => {
+    try {
+      const accessToken = await getPearToken()
       if (!accessToken) throw new Error('No token')
 
       const controller = new AbortController()
@@ -65,12 +136,11 @@ export function createYouTubeMusicProvider(): YouTubeMusicProvider {
       clearTimeout(timeoutId)
 
       if (res.status === 401) {
-        token = null
+        pearToken = null
         throw new Error('Unauthorized')
       }
       if (!res.ok) throw new Error('Not available')
 
-      consecutiveFailures = 0
       const data: PearSongResponse = await res.json()
       return {
         playing: !data.isPaused,
@@ -82,14 +152,67 @@ export function createYouTubeMusicProvider(): YouTubeMusicProvider {
         artworkUrl: data.imageSrc,
       }
     } catch {
-      consecutiveFailures++
       return null
     }
   }
 
-  const sendCommand = async (cmd: string): Promise<void> => {
+  // Fetch info from YTM Desktop
+  const fetchYtmInfo = async (): Promise<YouTubeMusicInfo | null> => {
     try {
-      const accessToken = await getToken()
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 500)
+
+      const res = await fetch(`${YTM_API}/query`, {
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+
+      if (!res.ok) throw new Error('Not available')
+
+      const data: YtmQueryResponse = await res.json()
+      if (!data.track?.title) return { playing: false }
+
+      return {
+        playing: data.player?.trackState === 1,
+        title: data.track.title,
+        artist: data.track.author,
+        album: data.track.album,
+        duration: data.track.duration,
+        position: data.player?.videoProgress,
+        artworkUrl: data.track.cover,
+      }
+    } catch {
+      return null
+    }
+  }
+
+  const fetchInfo = async (): Promise<YouTubeMusicInfo | null> => {
+    const api = await detectApi()
+
+    let info: YouTubeMusicInfo | null = null
+    if (api === 'ytm') {
+      info = await fetchYtmInfo()
+    } else if (api === 'pear') {
+      info = await fetchPearInfo()
+    }
+
+    if (info) {
+      consecutiveFailures = 0
+    } else {
+      consecutiveFailures++
+      // Reset detected API on failure to allow re-detection
+      if (consecutiveFailures >= MAX_FAILURES) {
+        detectedApi = null
+      }
+    }
+
+    return info
+  }
+
+  // Send command to Pear Desktop
+  const sendPearCommand = async (cmd: string): Promise<void> => {
+    try {
+      const accessToken = await getPearToken()
       if (!accessToken) return
       await fetch(`${PEAR_API}/api/v1/${cmd}`, {
         method: 'POST',
@@ -97,6 +220,28 @@ export function createYouTubeMusicProvider(): YouTubeMusicProvider {
       })
     } catch {
       // Pear Desktop not running - silently ignore
+    }
+  }
+
+  // Send command to YTM Desktop
+  const sendYtmCommand = async (cmd: string): Promise<void> => {
+    try {
+      await fetch(`${YTM_API}/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: cmd }),
+      })
+    } catch {
+      // YTM Desktop not running - silently ignore
+    }
+  }
+
+  const sendCommand = async (pearCmd: string, ytmCmd: string): Promise<void> => {
+    const api = await detectApi()
+    if (api === 'ytm') {
+      await sendYtmCommand(ytmCmd)
+    } else if (api === 'pear') {
+      await sendPearCommand(pearCmd)
     }
   }
 
@@ -126,7 +271,7 @@ export function createYouTubeMusicProvider(): YouTubeMusicProvider {
 
       if (!intervalId) {
         intervalId = setInterval(async () => {
-          // Pear Desktop が起動していない場合はポーリング停止
+          // API が起動していない場合はポーリング停止
           if (consecutiveFailures >= MAX_FAILURES) {
             if (intervalId) {
               clearInterval(intervalId)
@@ -154,31 +299,63 @@ export function createYouTubeMusicProvider(): YouTubeMusicProvider {
     },
 
     async toggle() {
-      await sendCommand('toggle-play')
+      await sendCommand('toggle-play', 'track-pause')
     },
 
     async next() {
-      await sendCommand('next')
+      await sendCommand('next', 'track-next')
     },
 
     async previous() {
-      await sendCommand('previous')
+      await sendCommand('previous', 'track-previous')
     },
 
     async seek(seconds: number) {
+      const api = await detectApi()
+      if (api === 'ytm') {
+        try {
+          await fetch(`${YTM_API}/query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: 'player-seek-to', value: Math.floor(seconds) }),
+          })
+        } catch {
+          // YTM Desktop not running
+        }
+      } else if (api === 'pear') {
+        try {
+          const accessToken = await getPearToken()
+          if (!accessToken) return
+          await fetch(`${PEAR_API}/api/v1/seek-to`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ seconds: Math.floor(seconds) }),
+          })
+        } catch {
+          // Pear Desktop not running
+        }
+      }
+    },
+
+    async launch() {
+      if (!window.__TAURI__) {
+        console.error('[YouTubeMusic] Tauri API not available')
+        return
+      }
       try {
-        const accessToken = await getToken()
-        if (!accessToken) return
-        await fetch(`${PEAR_API}/api/v1/seek-to`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ seconds: Math.floor(seconds) }),
-        })
-      } catch {
-        // Pear Desktop not running - silently ignore
+        // Try to open YouTube Music app using macOS open command
+        await window.__TAURI__.core.invoke('execute_shell', { command: 'open -a "YouTube Music"' })
+      } catch (error) {
+        console.error('[YouTubeMusic] Failed to launch app:', error)
+        // Fallback: try opening the web version
+        try {
+          await window.__TAURI__.core.invoke('execute_shell', { command: 'open "https://music.youtube.com"' })
+        } catch (e2) {
+          console.error('[YouTubeMusic] Fallback also failed:', e2)
+        }
       }
     },
   }

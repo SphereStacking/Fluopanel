@@ -3,6 +3,14 @@ import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useDiskProvider } from '@arcana/vue'
 
+interface Props {
+  direction?: 'horizontal' | 'vertical'
+}
+const props = withDefaults(defineProps<Props>(), {
+  direction: 'horizontal',
+})
+const isVertical = computed(() => props.direction === 'vertical')
+
 const { data: disk } = useDiskProvider('/')
 
 const availableText = computed(() => {
@@ -26,8 +34,9 @@ const glowClass = computed(() => {
 </script>
 
 <template>
+  <!-- Horizontal: icon + text -->
   <figure
-    v-if="disk"
+    v-if="disk && !isVertical"
     class="
       flex items-center gap-1.5 py-1 px-2.5 rounded-lg
       text-[12px] tracking-wide
@@ -44,4 +53,15 @@ const glowClass = computed(() => {
       :class="statusColor"
     >{{ availableText }}</figcaption>
   </figure>
+
+  <!-- Vertical: icon only with title -->
+  <button
+    v-else-if="disk && isVertical"
+    type="button"
+    class="p-1.5 rounded-lg hover:bg-[var(--widget-glass-hover)] transition-colors"
+    :class="glowClass"
+    :title="`Disk: ${availableText} available`"
+  >
+    <Icon icon="mdi:harddisk" class="w-4 h-4" :class="statusColor" />
+  </button>
 </template>

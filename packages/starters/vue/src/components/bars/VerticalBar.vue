@@ -1,57 +1,38 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Icon } from '@iconify/vue'
-import { useBatteryProvider, useCpuProvider, useMemoryProvider, useDiskProvider } from '@arcana/vue'
+import { useNativeMenu } from '@arcana/vue'
+import { executeShell } from '@arcana/core'
+import ArcanaIcon from '../icons/ArcanaIcon.vue'
+import Workspaces from '../Workspaces.vue'
+import ActiveApp from '../ActiveApp.vue'
+import Clock from '../Clock.vue'
+import GitHub from '../GitHub.vue'
+import Media from '../Media.vue'
+import YouTubeMusic from '../YouTubeMusic.vue'
+import Battery from '../Battery.vue'
+import Cpu from '../Cpu.vue'
+import Memory from '../Memory.vue'
+import Disk from '../Disk.vue'
 
-// Providers
-const { data: battery } = useBatteryProvider()
-const { data: cpu } = useCpuProvider()
-const { data: memory } = useMemoryProvider()
-const { data: disk } = useDiskProvider()
-
-// Battery icon
-const batteryIcon = computed(() => {
-  if (!battery.value) return 'mdi:battery'
-  if (battery.value.charging) return 'mdi:battery-charging'
-  const percent = battery.value.percent
-  if (percent > 80) return 'mdi:battery'
-  if (percent > 60) return 'mdi:battery-70'
-  if (percent > 40) return 'mdi:battery-50'
-  if (percent > 20) return 'mdi:battery-30'
-  return 'mdi:battery-10'
-})
-
-const batteryColor = computed(() => {
-  if (!battery.value) return 'text-[var(--text-secondary)]'
-  if (battery.value.charging) return 'text-[var(--holo-cyan)]'
-  if (battery.value.percent <= 20) return 'text-[var(--danger)]'
-  return 'text-[var(--text-secondary)]'
-})
-
-// CPU usage color
-const cpuColor = computed(() => {
-  if (!cpu.value) return 'text-[var(--text-secondary)]'
-  if (cpu.value.usage > 80) return 'text-[var(--danger)]'
-  if (cpu.value.usage > 50) return 'text-[var(--warning)]'
-  return 'text-[var(--text-secondary)]'
-})
-
-// Memory usage color
-const memoryColor = computed(() => {
-  if (!memory.value) return 'text-[var(--text-secondary)]'
-  const usedPercent = (memory.value.used / memory.value.total) * 100
-  if (usedPercent > 80) return 'text-[var(--danger)]'
-  if (usedPercent > 60) return 'text-[var(--warning)]'
-  return 'text-[var(--text-secondary)]'
-})
-
-// Disk usage color
-const diskColor = computed(() => {
-  if (!disk.value) return 'text-[var(--text-secondary)]'
-  const usedPercent = (disk.value.used / disk.value.total) * 100
-  if (usedPercent > 90) return 'text-[var(--danger)]'
-  if (usedPercent > 70) return 'text-[var(--warning)]'
-  return 'text-[var(--text-secondary)]'
+// Native settings menu
+const settingsMenu = useNativeMenu({
+  items: [
+    { id: 'arcana', label: '􀍟 Arcana 設定', accelerator: 'CmdOrCtrl+,' },
+    { id: 'aerospace', label: '􀏜 Aerospace 設定' },
+    { type: 'separator' },
+    { id: 'zshrc', label: '􀪏 .zshrc' },
+    { id: 'claude', label: '􀈕 .claude/' },
+  ],
+  onSelect: async (id) => {
+    const commands: Record<string, string> = {
+      arcana: 'code ~/.config/arcana/config.json',
+      aerospace: 'code ~/.config/aerospace/aerospace.toml',
+      zshrc: 'code ~/.zshrc',
+      claude: 'code ~/.claude',
+    }
+    if (commands[id]) {
+      await executeShell(commands[id])
+    }
+  },
 })
 </script>
 
@@ -59,7 +40,7 @@ const diskColor = computed(() => {
   <!-- Vertical bar container with holographic glass effect -->
   <div
     class="
-      relative flex flex-col items-center h-full w-10 py-3
+      relative flex flex-col items-center justify-between h-full w-10 py-3
       glass rounded-2xl
       overflow-hidden
     "
@@ -82,44 +63,62 @@ const diskColor = computed(() => {
       "
     />
 
-    <!-- System indicators (icons only) -->
-    <aside class="flex flex-col items-center gap-2 z-10">
+    <!-- Header: Settings + Workspaces + ActiveApp -->
+    <header class="flex flex-col items-center z-10">
+      <!-- Arcana Logo - Settings Menu -->
       <button
-        v-if="disk"
         type="button"
-        class="p-1.5 rounded-lg hover:bg-[var(--widget-glass-hover)] transition-colors"
-        :title="`Disk: ${Math.round((disk.used / disk.total) * 100)}%`"
+        class="
+          flex items-center justify-center w-7 h-7 mb-2
+          rounded-lg cursor-pointer
+          transition-all duration-300
+          hover:bg-[var(--widget-glass-hover)]
+          group
+        "
+        @click="settingsMenu.popup()"
       >
-        <Icon icon="mdi:harddisk" class="w-4 h-4" :class="diskColor" />
+        <ArcanaIcon
+          class="
+            w-4 h-4
+            text-[var(--text-secondary)]
+            group-hover:text-[var(--holo-cyan)]
+            transition-colors duration-300
+          "
+        />
       </button>
 
-      <button
-        v-if="cpu"
-        type="button"
-        class="p-1.5 rounded-lg hover:bg-[var(--widget-glass-hover)] transition-colors"
-        :title="`CPU: ${Math.round(cpu.usage)}%`"
-      >
-        <Icon icon="mdi:chip" class="w-4 h-4" :class="cpuColor" />
-      </button>
+      <!-- Separator -->
+      <div class="w-5 h-px bg-white/10 mb-2" />
 
-      <button
-        v-if="memory"
-        type="button"
-        class="p-1.5 rounded-lg hover:bg-[var(--widget-glass-hover)] transition-colors"
-        :title="`Memory: ${Math.round((memory.used / memory.total) * 100)}%`"
-      >
-        <Icon icon="mdi:memory" class="w-4 h-4" :class="memoryColor" />
-      </button>
+      <!-- Workspaces -->
+      <Workspaces direction="vertical" />
 
-      <button
-        v-if="battery"
-        type="button"
-        class="p-1.5 rounded-lg hover:bg-[var(--widget-glass-hover)] transition-colors"
-        :title="`Battery: ${Math.round(battery.percent)}%${battery.charging ? ' (Charging)' : ''}`"
-      >
-        <Icon :icon="batteryIcon" class="w-4 h-4" :class="batteryColor" />
-      </button>
-    </aside>
+      <!-- Active App -->
+      <ActiveApp direction="vertical" class="mt-1" />
+    </header>
+
+    <!-- Main: Clock, Media -->
+    <main class="flex flex-col items-center z-10">
+      <Clock direction="vertical" />
+      <Media direction="vertical" class="mt-1" />
+      <YouTubeMusic direction="vertical" class="mt-1" />
+    </main>
+
+    <!-- Footer: GitHub + System Indicators -->
+    <footer class="flex flex-col items-center z-10">
+      <GitHub direction="vertical" />
+
+      <!-- Separator -->
+      <div class="w-5 h-px bg-white/10 my-2" />
+
+      <!-- System indicators -->
+      <aside class="flex flex-col items-center gap-1">
+        <Disk direction="vertical" />
+        <Cpu direction="vertical" />
+        <Memory direction="vertical" />
+        <Battery direction="vertical" />
+      </aside>
+    </footer>
   </div>
 </template>
 

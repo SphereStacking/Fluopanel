@@ -1,5 +1,6 @@
 mod commands;
 mod ipc;
+mod watchers;
 mod windows;
 
 use clap::{Parser, Subcommand};
@@ -220,6 +221,9 @@ pub fn run() {
 
             // Start IPC server for CLI commands
             ipc::start_server(app.handle().clone());
+
+            // Initialize system watchers (active app, battery, volume, media, network)
+            watchers::init_all(app.handle().clone());
 
             // Initialize hover focus (autoraise) feature
             #[cfg(target_os = "macos")]

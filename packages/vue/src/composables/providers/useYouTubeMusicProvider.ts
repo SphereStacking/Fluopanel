@@ -1,13 +1,12 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createYouTubeMusicProvider, type YouTubeMusicInfo, type YouTubeMusicProvider } from '@arcana/providers'
+import { createYouTubeMusicProvider, type YouTubeMusicInfo } from '@arcana/providers'
 
 export function useYouTubeMusicProvider() {
   const data = ref<YouTubeMusicInfo | null>(null)
-  let provider: YouTubeMusicProvider | null = null
+  const provider = createYouTubeMusicProvider()
   let unsubscribe: (() => void) | null = null
 
   onMounted(async () => {
-    provider = createYouTubeMusicProvider()
     try {
       data.value = await provider.getInfo()
     } catch (error) {
@@ -23,20 +22,24 @@ export function useYouTubeMusicProvider() {
   })
 
   const toggle = async () => {
-    await provider?.toggle()
+    await provider.toggle()
   }
 
   const next = async () => {
-    await provider?.next()
+    await provider.next()
   }
 
   const previous = async () => {
-    await provider?.previous()
+    await provider.previous()
   }
 
   const seek = async (seconds: number) => {
-    await provider?.seek(seconds)
+    await provider.seek(seconds)
   }
 
-  return { data, toggle, next, previous, seek }
+  const launch = async () => {
+    await provider.launch()
+  }
+
+  return { data, toggle, next, previous, seek, launch }
 }

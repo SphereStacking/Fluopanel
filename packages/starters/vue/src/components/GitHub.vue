@@ -4,6 +4,15 @@ import { Icon } from '@iconify/vue'
 import { usePopover } from '@arcana/vue'
 import { useGitHub } from '../composables/useGitHub'
 
+interface Props {
+  direction?: 'horizontal' | 'vertical'
+}
+const props = withDefaults(defineProps<Props>(), {
+  direction: 'horizontal'
+})
+
+const isVertical = computed(() => props.direction === 'vertical')
+
 // GitHub data management
 const github = useGitHub()
 
@@ -12,29 +21,19 @@ const issuesTriggerRef = ref<HTMLElement | null>(null)
 const prsTriggerRef = ref<HTMLElement | null>(null)
 const notificationsTriggerRef = ref<HTMLElement | null>(null)
 
-// Popover management - separate popover for each type
-// exclusive: true ensures only one popover is open at a time
-const issuesPopover = usePopover({
+// Popover management - config changes based on direction
+// Note: Currently popover always appears below anchor. offsetX not yet supported.
+const popoverConfig = computed(() => ({
   width: 340,
   height: 420,
-  align: 'center',
+  align: isVertical.value ? 'start' as const : 'center' as const,
   offsetY: 8,
   exclusive: true,
-})
-const prsPopover = usePopover({
-  width: 340,
-  height: 420,
-  align: 'center',
-  offsetY: 8,
-  exclusive: true,
-})
-const notificationsPopover = usePopover({
-  width: 340,
-  height: 420,
-  align: 'center',
-  offsetY: 8,
-  exclusive: true,
-})
+}))
+
+const issuesPopover = usePopover(popoverConfig.value)
+const prsPopover = usePopover(popoverConfig.value)
+const notificationsPopover = usePopover(popoverConfig.value)
 
 // Click handlers
 async function openIssues() {
@@ -57,43 +56,54 @@ async function openNotifications() {
 
 // Color states
 const issueColor = computed(() => {
-  if (!github.isConfigured.value) return 'text-text-ghost'
-  if (github.issueCount.value > 0) return 'text-holo-cyan'
-  return 'text-text-secondary'
+  if (!github.isConfigured.value) return 'text-[var(--text-ghost)]'
+  if (github.issueCount.value > 0) return 'text-[var(--holo-cyan)]'
+  return 'text-[var(--text-secondary)]'
 })
 
 const prColor = computed(() => {
-  if (!github.isConfigured.value) return 'text-text-ghost'
-  if (github.prCount.value > 0) return 'text-holo-purple'
-  return 'text-text-secondary'
+  if (!github.isConfigured.value) return 'text-[var(--text-ghost)]'
+  if (github.prCount.value > 0) return 'text-[var(--holo-purple)]'
+  return 'text-[var(--text-secondary)]'
 })
 
 const notificationColor = computed(() => {
-  if (!github.isConfigured.value) return 'text-text-ghost'
-  if (github.notificationCount.value > 0) return 'text-holo-yellow'
-  return 'text-text-secondary'
+  if (!github.isConfigured.value) return 'text-[var(--text-ghost)]'
+  if (github.notificationCount.value > 0) return 'text-[var(--holo-yellow)]'
+  return 'text-[var(--text-secondary)]'
 })
 </script>
 
 <template>
-  <nav class="flex items-center gap-0.5">
+  <nav
+    class="flex items-center gap-1"
+    :class="isVertical ? 'flex-col' : ''"
+  >
     <!-- My Issues -->
     <button
       ref="issuesTriggerRef"
       type="button"
       @click="openIssues"
-      class="flex items-center gap-1 py-1 px-2 rounded-lg text-[12px] tracking-wide transition-all duration-200 hover:bg-widget-glass-hover cursor-pointer group"
+      class="relative p-1.5 rounded-lg transition-all duration-200 hover:bg-[var(--widget-glass-hover)] cursor-pointer group"
+      title="Issues"
     >
       <Icon
         icon="octicon:issue-opened-16"
-        class="w-[14px] h-[14px] transition-colors duration-200"
+        class="w-4 h-4 transition-colors duration-200"
         :class="issueColor"
       />
+      <!-- Badge -->
       <span
         v-if="github.issueCount.value > 0"
-        class="font-medium tabular-nums text-text-secondary group-hover:text-text-primary transition-colors duration-200"
-        >{{ github.issueCount.value }}</span
-      >
+        class="
+          absolute -top-0.5 -right-0.5
+          min-w-[14px] h-[14px] px-0.5
+          flex items-center justify-center
+          text-[8px] font-bold
+          bg-[var(--holo-cyan)] text-black
+          rounded-full
+        "
+      >{{ github.issueCount.value > 999 ? '999+' : github.issueCount.value }}</span>
     </button>
 
     <!-- My Pull Requests -->
@@ -101,18 +111,26 @@ const notificationColor = computed(() => {
       ref="prsTriggerRef"
       type="button"
       @click="openPRs"
-      class="flex items-center gap-1 py-1 px-2 rounded-lg text-[12px] tracking-wide transition-all duration-200 hover:bg-widget-glass-hover cursor-pointer group"
+      class="relative p-1.5 rounded-lg transition-all duration-200 hover:bg-[var(--widget-glass-hover)] cursor-pointer group"
+      title="Pull Requests"
     >
       <Icon
         icon="octicon:git-pull-request-16"
-        class="w-[14px] h-[14px] transition-colors duration-200"
+        class="w-4 h-4 transition-colors duration-200"
         :class="prColor"
       />
+      <!-- Badge -->
       <span
         v-if="github.prCount.value > 0"
-        class="font-medium tabular-nums text-text-secondary group-hover:text-text-primary transition-colors duration-200"
-        >{{ github.prCount.value }}</span
-      >
+        class="
+          absolute -top-0.5 -right-0.5
+          min-w-[14px] h-[14px] px-0.5
+          flex items-center justify-center
+          text-[8px] font-bold
+          bg-[var(--holo-purple)] text-white
+          rounded-full
+        "
+      >{{ github.prCount.value > 999 ? '999+' : github.prCount.value }}</span>
     </button>
 
     <!-- Unread Notifications -->
@@ -120,18 +138,26 @@ const notificationColor = computed(() => {
       ref="notificationsTriggerRef"
       type="button"
       @click="openNotifications"
-      class="flex items-center gap-1 py-1 px-2 rounded-lg text-[12px] tracking-wide transition-all duration-200 cursor-pointer group hover:bg-widget-glass-hover"
+      class="relative p-1.5 rounded-lg transition-all duration-200 hover:bg-[var(--widget-glass-hover)] cursor-pointer group"
+      title="Notifications"
     >
       <Icon
         icon="octicon:inbox-16"
-        class="w-[14px] h-[14px] transition-colors duration-200"
+        class="w-4 h-4 transition-colors duration-200"
         :class="notificationColor"
       />
+      <!-- Badge -->
       <span
         v-if="github.notificationCount.value > 0"
-        class="font-medium tabular-nums text-text-secondary group-hover:text-text-primary transition-colors duration-200"
-        >{{ github.notificationCount.value }}</span
-      >
+        class="
+          absolute -top-0.5 -right-0.5
+          min-w-[14px] h-[14px] px-0.5
+          flex items-center justify-center
+          text-[8px] font-bold
+          bg-[var(--holo-yellow)] text-black
+          rounded-full
+        "
+      >{{ github.notificationCount.value > 999 ? '999+' : github.notificationCount.value }}</span>
     </button>
   </nav>
 </template>
