@@ -96,6 +96,44 @@ fn calculate_geometry(
 }
 
 /// Get monitor info by name or primary
+/// Returns (x, y, width, height) in logical pixels for the visible frame
+/// On macOS, uses NSScreen.visibleFrame to exclude menu bar and dock
+#[cfg(target_os = "macos")]
+fn get_monitor_info(_app: &AppHandle, _monitor_name: Option<&str>) -> Result<(i32, i32, u32, u32), String> {
+    use objc2::{msg_send, runtime::AnyObject, ClassType};
+    use objc2_app_kit::NSScreen;
+    use objc2_foundation::NSRect;
+
+    unsafe {
+        let screens: *const AnyObject = msg_send![NSScreen::class(), screens];
+        if screens.is_null() {
+            return Err("No screens available".to_string());
+        }
+
+        let main_screen: *const AnyObject = msg_send![screens, firstObject];
+        if main_screen.is_null() {
+            return Err("No main screen".to_string());
+        }
+
+        // visibleFrame excludes menu bar and dock
+        let visible: NSRect = msg_send![main_screen, visibleFrame];
+        // frame is the full screen
+        let frame: NSRect = msg_send![main_screen, frame];
+
+        // macOS uses bottom-left origin, convert to top-left
+        // menu_bar_height = frame.height - visible.height - visible.origin.y (dock height)
+        let menu_bar_height = frame.size.height - visible.size.height - visible.origin.y;
+
+        Ok((
+            visible.origin.x as i32,
+            menu_bar_height as i32,
+            visible.size.width as u32,
+            visible.size.height as u32,
+        ))
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
 fn get_monitor_info(app: &AppHandle, monitor_name: Option<&str>) -> Result<(i32, i32, u32, u32), String> {
     let monitors = app.available_monitors().map_err(|e| e.to_string())?;
 
