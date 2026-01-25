@@ -7,6 +7,9 @@ use tauri::WebviewWindowBuilder;
 #[cfg(target_os = "macos")]
 use tauri_nspanel::{tauri_panel, ManagerExt, PanelBuilder, PanelLevel};
 
+use super::constants::geometry::*;
+use super::helpers::constrain_to_screen;
+
 // Define NSPanel class for popovers (macOS only)
 #[cfg(target_os = "macos")]
 tauri_panel! {
@@ -49,13 +52,15 @@ pub struct PopoverInfo {
     pub max_height: f64,
 }
 
-/// Shadow padding constant (p-20 = 80px each side = 160px total)
-const SHADOW_PADDING: f64 = 160.0;
-/// Top margin for menu bar area
-const TOP_MARGIN: f64 = 80.0;
+/// Monitor bounds (x, y, width, height) in logical pixels
+type MonitorBounds = (f64, f64, f64, f64);
 
-/// Get monitor info containing the anchor point
-fn get_monitor_at_point(app: &AppHandle, x: f64, y: f64) -> Result<(f64, f64, f64, f64), String> {
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/// Get monitor bounds containing the anchor point
+fn get_monitor_at_point(app: &AppHandle, x: f64, y: f64) -> Result<MonitorBounds, String> {
     let monitors = app.available_monitors().map_err(|e| e.to_string())?;
 
     if monitors.is_empty() {
@@ -68,13 +73,17 @@ fn get_monitor_at_point(app: &AppHandle, x: f64, y: f64) -> Result<(f64, f64, f6
         let size = monitor.size();
         let scale = monitor.scale_factor();
 
-        let mx = pos.x as f64 / scale;
-        let my = pos.y as f64 / scale;
-        let mw = size.width as f64 / scale;
-        let mh = size.height as f64 / scale;
+        let monitor_x = pos.x as f64 / scale;
+        let monitor_y = pos.y as f64 / scale;
+        let monitor_width = size.width as f64 / scale;
+        let monitor_height = size.height as f64 / scale;
 
-        if x >= mx && x < mx + mw && y >= my && y < my + mh {
-            return Ok((mx, my, mw, mh));
+        if x >= monitor_x
+            && x < monitor_x + monitor_width
+            && y >= monitor_y
+            && y < monitor_y + monitor_height
+        {
+            return Ok((monitor_x, monitor_y, monitor_width, monitor_height));
         }
     }
 
@@ -96,18 +105,17 @@ fn get_monitor_at_point(app: &AppHandle, x: f64, y: f64) -> Result<(f64, f64, f6
     ))
 }
 
-/// Calculate popover position based on anchor and alignment
+/// Calculate popover position based on anchor, alignment, and monitor bounds
 fn calculate_popover_position(
     anchor: &PopoverAnchor,
     popover_width: f64,
     popover_height: f64,
     align: &PopoverAlign,
     offset_y: f64,
-    monitor_x: f64,
-    monitor_y: f64,
-    monitor_width: f64,
-    monitor_height: f64,
+    monitor: MonitorBounds,
 ) -> (f64, f64) {
+    let (monitor_x, monitor_y, monitor_width, monitor_height) = monitor;
+
     // Y: below anchor with offset
     let mut y = anchor.y + anchor.height + offset_y;
 
@@ -120,10 +128,156 @@ fn calculate_popover_position(
 
     // Clamp to monitor bounds
     x = x.max(monitor_x).min(monitor_x + monitor_width - popover_width);
-    y = y.max(monitor_y).min(monitor_y + monitor_height - popover_height);
+    y = y
+        .max(monitor_y)
+        .min(monitor_y + monitor_height - popover_height);
 
     (x, y)
 }
+
+/// Calculate maximum available height from anchor bottom to screen bottom
+fn calculate_available_height(
+    anchor: &PopoverAnchor,
+    offset_y: f64,
+    monitor_y: f64,
+    monitor_height: f64,
+) -> f64 {
+    let popover_top = anchor.y + anchor.height + offset_y;
+    (monitor_y + monitor_height - popover_top).max(MIN_AVAILABLE_HEIGHT)
+}
+
+/// Build popover URL with parameters
+fn build_popover_url(popover_id: &str, max_height: u32) -> Result<WebviewUrl, String> {
+    let url = if cfg!(debug_assertions) {
+        format!(
+            "http://localhost:1420/?popover={}&maxHeight={}",
+            popover_id, max_height
+        )
+    } else {
+        format!(
+            "arcana://localhost/?popover={}&maxHeight={}",
+            popover_id, max_height
+        )
+    };
+
+    let parsed_url = url.parse().map_err(|e| format!("Invalid URL: {}", e))?;
+    Ok(WebviewUrl::External(parsed_url))
+}
+
+/// Emit popover-closed event with error logging
+fn emit_popover_closed(app: &AppHandle, popover_id: &str) {
+    if let Err(e) = app.emit("popover-closed", popover_id) {
+        eprintln!("[popover] Failed to emit popover-closed event: {}", e);
+    }
+}
+
+// ============================================================================
+// macOS Panel Creation
+// ============================================================================
+
+#[cfg(target_os = "macos")]
+fn create_macos_panel(
+    app: &AppHandle,
+    label: &str,
+    popover_id: &str,
+    webview_url: WebviewUrl,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+) -> Result<(), String> {
+    let app_for_blur = app.clone();
+    let popover_id_for_blur = popover_id.to_string();
+    let label_for_blur = label.to_string();
+
+    let _panel = PanelBuilder::<_, PopoverPanel>::new(app, label)
+        .url(webview_url)
+        .level(PanelLevel::Floating)
+        .title(popover_id)
+        .floating(true)
+        .transparent(true)
+        .becomes_key_only_if_needed(false)
+        .with_window(|w| w.decorations(false).transparent(true))
+        .position(tauri::Position::Logical(tauri::LogicalPosition { x, y }))
+        .size(tauri::Size::Logical(tauri::LogicalSize { width, height }))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    // Setup blur handler - use hide() instead of close() to avoid Obj-C exception
+    if let Some(window) = app.get_webview_window(label) {
+        window.on_window_event(move |event| {
+            if let tauri::WindowEvent::Focused(false) = event {
+                // Use order_out (hide) instead of close - safe from event handler
+                if let Ok(panel) = app_for_blur.get_webview_panel(&label_for_blur) {
+                    panel.hide();
+                }
+                emit_popover_closed(&app_for_blur, &popover_id_for_blur);
+            }
+        });
+    }
+
+    Ok(())
+}
+
+// ============================================================================
+// Non-macOS Window Creation
+// ============================================================================
+
+#[cfg(not(target_os = "macos"))]
+fn create_standard_window(
+    app: &AppHandle,
+    label: &str,
+    popover_id: &str,
+    webview_url: WebviewUrl,
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+) -> Result<(), String> {
+    let window = WebviewWindowBuilder::new(app, label, webview_url)
+        .title(popover_id)
+        .decorations(false)
+        .transparent(true)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .resizable(false)
+        .visible(true)
+        .focused(true)
+        .position(x, y)
+        .inner_size(width, height)
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    // Close on blur
+    let app_for_blur = app.clone();
+    let popover_id_for_blur = popover_id.to_string();
+    let label_for_blur = label.to_string();
+
+    window.on_window_event(move |event| {
+        if let tauri::WindowEvent::Focused(false) = event {
+            let app = app_for_blur.clone();
+            let label = label_for_blur.clone();
+            let popover_id = popover_id_for_blur.clone();
+
+            // Schedule close asynchronously to avoid potential issues
+            // when closing window from within its own event handler
+            tauri::async_runtime::spawn(async move {
+                if let Some(win) = app.get_webview_window(&label) {
+                    if let Err(e) = win.close() {
+                        eprintln!("[popover] Failed to close window: {}", e);
+                    }
+                }
+                emit_popover_closed(&app, &popover_id);
+            });
+        }
+    });
+
+    Ok(())
+}
+
+// ============================================================================
+// Public Commands
+// ============================================================================
 
 /// Open a popover window (toggle mode: if visible, hide it; if hidden, show it; otherwise create new)
 #[command]
@@ -138,7 +292,7 @@ pub fn open_popover(
 ) -> Result<PopoverInfo, String> {
     let label = format!("popover-{}", popover_id);
     let align = align.unwrap_or_default();
-    let offset_y = offset_y.unwrap_or(8.0);
+    let offset_y = offset_y.unwrap_or(DEFAULT_POPOVER_OFFSET_Y);
 
     // macOS: Check if panel already exists and reuse it
     #[cfg(target_os = "macos")]
@@ -147,7 +301,7 @@ pub fn open_popover(
             if panel.is_visible() {
                 // Toggle off: hide it (safe from event handler)
                 panel.hide();
-                let _ = app.emit("popover-closed", &popover_id);
+                emit_popover_closed(&app, &popover_id);
                 return Ok(PopoverInfo {
                     id: popover_id,
                     label,
@@ -155,15 +309,12 @@ pub fn open_popover(
                     max_height: 0.0,
                 });
             } else {
-                // Toggle on: update position, size, and show
-                let (monitor_x, monitor_y, monitor_width, monitor_height) =
-                    get_monitor_at_point(&app, anchor.x, anchor.y)?;
+                // Toggle on: update position and show
+                let monitor = get_monitor_at_point(&app, anchor.x, anchor.y)?;
+                let (_monitor_x, monitor_y, monitor_width, monitor_height) = monitor;
 
-                // Clamp size to screen bounds
-                let max_width = monitor_width - SHADOW_PADDING;
-                let max_height = monitor_height - SHADOW_PADDING - TOP_MARGIN;
-                let constrained_width = width.min(max_width);
-                let constrained_height = height.min(max_height);
+                let (constrained_width, constrained_height) =
+                    constrain_to_screen(width, height, monitor_width, monitor_height);
 
                 let (x, y) = calculate_popover_position(
                     &anchor,
@@ -171,18 +322,23 @@ pub fn open_popover(
                     constrained_height,
                     &align,
                     offset_y,
-                    monitor_x,
-                    monitor_y,
-                    monitor_width,
-                    monitor_height,
+                    monitor,
                 );
+
                 if let Some(window) = app.get_webview_window(&label) {
-                    let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition { x, y }));
+                    if let Err(e) =
+                        window.set_position(tauri::Position::Logical(tauri::LogicalPosition {
+                            x,
+                            y,
+                        }))
+                    {
+                        eprintln!("[popover] Failed to set position: {}", e);
+                    }
                     // Don't reset size - keep the auto-sized dimensions from previous show
                 }
-                // Calculate max available height from anchor bottom to screen bottom
-                let popover_top = anchor.y + anchor.height + offset_y;
-                let available_max_height = (monitor_y + monitor_height - popover_top).max(100.0);
+
+                let available_max_height =
+                    calculate_available_height(&anchor, offset_y, monitor_y, monitor_height);
 
                 panel.show();
                 return Ok(PopoverInfo {
@@ -199,8 +355,10 @@ pub fn open_popover(
     #[cfg(not(target_os = "macos"))]
     {
         if let Some(window) = app.get_webview_window(&label) {
-            let _ = window.destroy();
-            let _ = app.emit("popover-closed", &popover_id);
+            if let Err(e) = window.destroy() {
+                eprintln!("[popover] Failed to destroy window: {}", e);
+            }
+            emit_popover_closed(&app, &popover_id);
             return Ok(PopoverInfo {
                 id: popover_id,
                 label,
@@ -211,14 +369,12 @@ pub fn open_popover(
     }
 
     // Get monitor info
-    let (monitor_x, monitor_y, monitor_width, monitor_height) =
-        get_monitor_at_point(&app, anchor.x, anchor.y)?;
+    let monitor = get_monitor_at_point(&app, anchor.x, anchor.y)?;
+    let (_monitor_x, monitor_y, monitor_width, monitor_height) = monitor;
 
     // Clamp size to screen bounds
-    let max_width = monitor_width - SHADOW_PADDING;
-    let max_height = monitor_height - SHADOW_PADDING - TOP_MARGIN;
-    let constrained_width = width.min(max_width);
-    let constrained_height = height.min(max_height);
+    let (constrained_width, constrained_height) =
+        constrain_to_screen(width, height, monitor_width, monitor_height);
 
     // Calculate position with constrained size
     let (x, y) = calculate_popover_position(
@@ -227,100 +383,40 @@ pub fn open_popover(
         constrained_height,
         &align,
         offset_y,
-        monitor_x,
-        monitor_y,
-        monitor_width,
-        monitor_height,
+        monitor,
     );
 
-    // Calculate max available height from anchor bottom to screen bottom
-    let popover_top = anchor.y + anchor.height + offset_y;
-    let available_max_height = (monitor_y + monitor_height - popover_top).max(100.0);
+    // Calculate max available height
+    let available_max_height =
+        calculate_available_height(&anchor, offset_y, monitor_y, monitor_height);
 
     // Build URL with popover parameter and maxHeight
-    let url = if cfg!(debug_assertions) {
-        format!("http://localhost:1420/?popover={}&maxHeight={}", popover_id, available_max_height as u32)
-    } else {
-        format!("arcana://localhost/?popover={}&maxHeight={}", popover_id, available_max_height as u32)
-    };
+    let webview_url = build_popover_url(&popover_id, available_max_height as u32)?;
 
-    let webview_url = WebviewUrl::External(url.parse().map_err(|e| format!("Invalid URL: {}", e))?);
-
-    // macOS: Create as NSPanel for proper first-click behavior
+    // Create platform-specific window
     #[cfg(target_os = "macos")]
-    {
-        let app_for_blur = app.clone();
-        let popover_id_for_blur = popover_id.clone();
-        let label_for_blur = label.clone();
+    create_macos_panel(
+        &app,
+        &label,
+        &popover_id,
+        webview_url,
+        x,
+        y,
+        constrained_width,
+        constrained_height,
+    )?;
 
-        let _panel = PanelBuilder::<_, PopoverPanel>::new(&app, &label)
-            .url(webview_url)
-            .level(PanelLevel::Floating)
-            .title(&popover_id)
-            .floating(true)
-            .transparent(true)
-            .becomes_key_only_if_needed(false)
-            .with_window(|w| w.decorations(false).transparent(true))
-            .position(tauri::Position::Logical(tauri::LogicalPosition { x, y }))
-            .size(tauri::Size::Logical(tauri::LogicalSize {
-                width: constrained_width,
-                height: constrained_height,
-            }))
-            .build()
-            .map_err(|e| e.to_string())?;
-
-        // Setup blur handler - use hide() instead of close() to avoid Obj-C exception
-        if let Some(window) = app.get_webview_window(&label) {
-            window.on_window_event(move |event| {
-                if let tauri::WindowEvent::Focused(false) = event {
-                    // Use order_out (hide) instead of close - safe from event handler
-                    if let Ok(panel) = app_for_blur.get_webview_panel(&label_for_blur) {
-                        panel.hide();
-                    }
-                    let _ = app_for_blur.emit("popover-closed", &popover_id_for_blur);
-                }
-            });
-        }
-    }
-
-    // Non-macOS: Use standard WebviewWindow
     #[cfg(not(target_os = "macos"))]
-    {
-        let window = WebviewWindowBuilder::new(&app, &label, webview_url)
-            .title(&popover_id)
-            .decorations(false)
-            .transparent(true)
-            .always_on_top(true)
-            .skip_taskbar(true)
-            .resizable(false)
-            .visible(true)
-            .focused(true)
-            .position(x, y)
-            .inner_size(constrained_width, constrained_height)
-            .build()
-            .map_err(|e| e.to_string())?;
-
-        // Close on blur
-        let app_for_blur = app.clone();
-        let popover_id_for_blur = popover_id.clone();
-        let label_for_blur = label.clone();
-        window.on_window_event(move |event| {
-            if let tauri::WindowEvent::Focused(false) = event {
-                let app = app_for_blur.clone();
-                let label = label_for_blur.clone();
-                let popover_id = popover_id_for_blur.clone();
-
-                // Schedule close asynchronously to avoid potential issues
-                // when closing window from within its own event handler
-                tauri::async_runtime::spawn(async move {
-                    if let Some(win) = app.get_webview_window(&label) {
-                        let _ = win.close();
-                    }
-                    let _ = app.emit("popover-closed", &popover_id);
-                });
-            }
-        });
-    }
+    create_standard_window(
+        &app,
+        &label,
+        &popover_id,
+        webview_url,
+        x,
+        y,
+        constrained_width,
+        constrained_height,
+    )?;
 
     Ok(PopoverInfo {
         id: popover_id,
@@ -341,7 +437,7 @@ pub fn close_popover(app: AppHandle, popover_id: String) -> Result<(), String> {
         if let Ok(panel) = app.get_webview_panel(&label) {
             if panel.is_visible() {
                 panel.hide();
-                let _ = app.emit("popover-closed", &popover_id);
+                emit_popover_closed(&app, &popover_id);
             }
         }
         return Ok(());
@@ -351,7 +447,7 @@ pub fn close_popover(app: AppHandle, popover_id: String) -> Result<(), String> {
     {
         if let Some(window) = app.get_webview_window(&label) {
             window.destroy().map_err(|e| e.to_string())?;
-            let _ = app.emit("popover-closed", &popover_id);
+            emit_popover_closed(&app, &popover_id);
         }
         return Ok(());
     }
@@ -380,7 +476,7 @@ pub fn close_all_popovers(app: AppHandle) -> Result<(), String> {
             if let Ok(panel) = app.get_webview_panel(&label) {
                 if panel.is_visible() {
                     panel.hide();
-                    let _ = app.emit("popover-closed", &popover_id);
+                    emit_popover_closed(&app, &popover_id);
                 }
             }
         }
@@ -388,8 +484,10 @@ pub fn close_all_popovers(app: AppHandle) -> Result<(), String> {
         #[cfg(not(target_os = "macos"))]
         {
             if let Some(window) = app.get_webview_window(&label) {
-                let _ = window.destroy();
-                let _ = app.emit("popover-closed", &popover_id);
+                if let Err(e) = window.destroy() {
+                    eprintln!("[popover] Failed to destroy window {}: {}", label, e);
+                }
+                emit_popover_closed(&app, &popover_id);
             }
         }
     }

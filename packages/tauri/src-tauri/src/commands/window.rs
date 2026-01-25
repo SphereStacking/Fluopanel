@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+use super::helpers::{constrain_to_screen, get_target_window};
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MonitorInfo {
@@ -23,7 +25,7 @@ pub fn get_monitors(window: tauri::WebviewWindow) -> Result<Vec<MonitorInfo>, St
             let scale = m.scale_factor();
             // Return logical pixels (divide physical by scale factor)
             MonitorInfo {
-                name: m.name().map(|s| s.clone()).unwrap_or_else(|| "Unknown".to_string()),
+                name: m.name().cloned().unwrap_or_else(|| "Unknown".to_string()),
                 width: (size.width as f64 / scale) as u32,
                 height: (size.height as f64 / scale) as u32,
                 x: (position.x as f64 / scale) as i32,
@@ -46,17 +48,8 @@ pub fn set_window_geometry(
     width: u32,
     height: u32,
 ) -> Result<(), String> {
-    use tauri::Manager;
+    let target_window = get_target_window(&app, window, label.as_deref())?;
 
-    // If label is provided, look up that window; otherwise use the calling window
-    let target_window = if let Some(ref lbl) = label {
-        app.get_webview_window(lbl)
-            .ok_or_else(|| format!("Window '{}' not found", lbl))?
-    } else {
-        window
-    };
-
-    // Use logical coordinates (Tauri will handle scale factor automatically)
     target_window
         .set_position(tauri::Position::Logical(tauri::LogicalPosition {
             x: x as f64,
@@ -83,14 +76,7 @@ pub fn set_window_position(
     x: i32,
     y: i32,
 ) -> Result<(), String> {
-    use tauri::Manager;
-
-    let target_window = if let Some(ref lbl) = label {
-        app.get_webview_window(lbl)
-            .ok_or_else(|| format!("Window '{}' not found", lbl))?
-    } else {
-        window
-    };
+    let target_window = get_target_window(&app, window, label.as_deref())?;
 
     target_window
         .set_position(tauri::Position::Logical(tauri::LogicalPosition {
@@ -102,11 +88,6 @@ pub fn set_window_position(
     Ok(())
 }
 
-/// Shadow padding constant (p-20 = 80px each side = 160px total)
-const SHADOW_PADDING: f64 = 160.0;
-/// Top margin for menu bar area
-const TOP_MARGIN: f64 = 80.0;
-
 /// Set only the size (width, height) of a window - called by frontend based on content
 /// Automatically clamps to screen bounds to prevent content overflow
 #[tauri::command]
@@ -117,14 +98,7 @@ pub fn set_window_size(
     width: u32,
     height: u32,
 ) -> Result<(), String> {
-    use tauri::Manager;
-
-    let target_window = if let Some(ref lbl) = label {
-        app.get_webview_window(lbl)
-            .ok_or_else(|| format!("Window '{}' not found", lbl))?
-    } else {
-        window
-    };
+    let target_window = get_target_window(&app, window, label.as_deref())?;
 
     // Popover windows are already clamped by popover.rs (accurate maxHeight based on anchor position)
     // and useAutoSize (clamps content to maxHeight). Skip additional constraints here.
@@ -138,11 +112,7 @@ pub fn set_window_size(
         let scale = monitor.scale_factor();
         let monitor_width = monitor.size().width as f64 / scale;
         let monitor_height = monitor.size().height as f64 / scale;
-
-        let max_width = monitor_width - SHADOW_PADDING;
-        let max_height = monitor_height - SHADOW_PADDING - TOP_MARGIN;
-
-        ((width as f64).min(max_width), (height as f64).min(max_height))
+        constrain_to_screen(width as f64, height as f64, monitor_width, monitor_height)
     } else {
         (width as f64, height as f64)
     };

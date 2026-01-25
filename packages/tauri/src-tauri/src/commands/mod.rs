@@ -4,8 +4,10 @@ pub mod audio;
 #[cfg(target_os = "macos")]
 pub mod brightness;
 pub mod config;
-pub mod popover;
+pub mod constants;
+pub mod helpers;
 pub mod icons;
+pub mod popover;
 pub mod shell;
 pub mod store;
 pub mod system;
