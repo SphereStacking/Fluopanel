@@ -36,7 +36,6 @@ useAutoSize(contentRef, {
       width: 'fit-content',
       height: 'fit-content',
       maxHeight: popoverContext.maxHeight ? `${popoverContext.maxHeight}px` : undefined,
-      overflow: 'hidden',
     }"
   >
     <slot />

@@ -68,28 +68,30 @@ export function useAutoSize(
 
     // Use scrollWidth/scrollHeight to get natural content size
     const rawWidth = elementRef.value.scrollWidth
-    let rawHeight = elementRef.value.scrollHeight
+    const rawHeight = elementRef.value.scrollHeight
 
-    // Check for scrollable child elements (overflow-y-auto, overflow-auto)
-    // When a child has overflow-y-auto, it shrinks to fit the parent, hiding its true content height
-    // We need to add back the hidden (scrollable) portion to get the natural content height
+    // Check for scrollable child elements to calculate total content height
     const scrollableChild = elementRef.value.querySelector(
       '.overflow-y-auto, .overflow-auto, [style*="overflow-y: auto"], [style*="overflow: auto"]'
     ) as HTMLElement | null
 
+    // Calculate total content height including scrollable content
+    let totalContentHeight = rawHeight
     if (scrollableChild) {
-      // scrollHeight = total content height (including scrolled-out-of-view content)
-      // clientHeight = visible height of the scrollable area
       const hiddenHeight = scrollableChild.scrollHeight - scrollableChild.clientHeight
       if (hiddenHeight > 0) {
-        rawHeight += hiddenHeight
+        totalContentHeight += hiddenHeight
       }
     }
 
-    // Clamp to min/max bounds
-    // maxHeight is typically set by Rust based on available screen space
+    // Determine final height:
+    // - If total content exceeds maxHeight, use maxHeight (enables scrolling)
+    // - Otherwise, use actual content height (no scrolling needed)
+    const maxVal = unwrap(options?.maxHeight)
     const newWidth = clamp(rawWidth, options?.minWidth, options?.maxWidth)
-    const newHeight = clamp(rawHeight, options?.minHeight, options?.maxHeight)
+    const newHeight = maxVal && totalContentHeight > maxVal
+      ? maxVal // Content exceeds max, fix at maxHeight to enable scrolling
+      : clamp(rawHeight, options?.minHeight, options?.maxHeight)
 
     // Skip if size hasn't changed
     if (newWidth === width.value && newHeight === height.value) return
@@ -99,7 +101,6 @@ export function useAutoSize(
     height.value = newHeight
 
     try {
-      // Rust side will clamp to screen bounds
       await invoke('set_window_size', {
         width: newWidth,
         height: newHeight,
