@@ -6,13 +6,14 @@ mod windows;
 use clap::{Parser, Subcommand};
 use commands::{
     aerospace_focus_workspace, aerospace_get_focused_workspace, aerospace_get_workspaces,
-    clear_icon_cache, close_all_popovers, close_popover, execute_shell, get_active_app_info,
-    get_app_icon, get_app_icons, get_battery_info, get_bluetooth_info, get_brightness_info,
-    get_config, get_cpu_info, get_disk_info, get_media_info, get_memory_info, get_monitors,
-    get_network_info, get_open_popovers, get_volume_info, media_next, media_pause, media_play,
-    media_previous, open_popover, save_config, set_brightness, set_mute, set_volume,
-    set_window_geometry, set_window_position, set_window_size, store_delete, store_get,
-    store_keys, store_set, toggle_bluetooth, toggle_mute,
+    build_all_widgets, build_widget, clear_icon_cache, close_all_popovers, close_popover,
+    execute_shell, get_active_app_info, get_app_icon, get_app_icons, get_battery_info,
+    get_bluetooth_info, get_brightness_info, get_config, get_cpu_info, get_disk_info,
+    get_media_info, get_memory_info, get_monitors, get_network_info, get_open_popovers,
+    get_volume_info, media_next, media_pause, media_play, media_previous, open_popover,
+    save_config, set_brightness, set_mute, set_volume, set_window_geometry, set_window_position,
+    set_window_size, store_delete, store_get, store_keys, store_set, toggle_bluetooth,
+    toggle_mute, widget_needs_build,
 };
 use windows::{
     close_window, create_inline_window, create_window,
@@ -154,6 +155,10 @@ pub fn run() {
             store_keys,
             // Shell commands
             execute_shell,
+            // Builder commands
+            build_widget,
+            build_all_widgets,
+            widget_needs_build,
         ])
         .register_uri_scheme_protocol("arcana", |ctx, request| {
             // Combine host and path for routing
@@ -281,7 +286,20 @@ pub fn run() {
                     let window_id = parts[0];
                     let file = if parts.len() >= 2 { parts[1] } else { "index.html" };
                     if let Ok(windows_dir) = get_windows_dir() {
-                        let file_path = windows_dir.join(window_id).join(file);
+                        let widget_dir = windows_dir.join(window_id);
+
+                        // Check .arcana/ directory first (built files)
+                        let arcana_path = widget_dir.join(".arcana").join(file);
+                        if arcana_path.exists() {
+                            // Inject importmap for HTML files
+                            if file.ends_with(".html") || file == "index.html" {
+                                return serve_widget_html(&arcana_path);
+                            }
+                            return serve_file(&arcana_path);
+                        }
+
+                        // Fall back to source directory
+                        let file_path = widget_dir.join(file);
                         // Inject importmap for HTML files in widget directories
                         if file.ends_with(".html") || file == "index.html" {
                             return serve_widget_html(&file_path);
