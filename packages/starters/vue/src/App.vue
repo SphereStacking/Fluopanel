@@ -45,11 +45,18 @@ useCoordinator({ autoHide: !isPopover.value })
     <GitHubNotificationsPopover />
   </Popover>
 
-  <!-- Test Widget -->
+  <!-- Test Widget (HTML + JS, no build) -->
   <Window
     id="test-widget"
     :position="{ top: 0, right: 0, width: 300, height: 200 }"
     url="arcana://window/test-widget/index.html"
+  />
+
+  <!-- Vue Test Widget (auto-built from .vue) -->
+  <Window
+    id="vue-test"
+    :position="{ top: 220, right: 0, width: 300, height: 200 }"
+    url="arcana://window/vue-test/index.html"
   />
 
 </template>
