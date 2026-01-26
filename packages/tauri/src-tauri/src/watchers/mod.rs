@@ -15,6 +15,7 @@ pub mod network;
 pub mod system_monitor;
 #[cfg(target_os = "macos")]
 pub mod volume;
+pub mod widgets;
 
 use tauri::AppHandle;
 
@@ -42,8 +43,13 @@ pub fn init_all(app_handle: AppHandle) {
             eprintln!("Failed to register network watcher: {}", e);
         }
 
-        if let Err(e) = media::register(app_handle) {
+        if let Err(e) = media::register(app_handle.clone()) {
             eprintln!("Failed to register media watcher: {}", e);
         }
+    }
+
+    // Widget file watcher (cross-platform)
+    if let Err(e) = widgets::register(app_handle) {
+        eprintln!("Failed to register widget watcher: {}", e);
     }
 }
