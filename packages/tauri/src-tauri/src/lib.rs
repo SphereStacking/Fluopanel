@@ -1,3 +1,4 @@
+mod cli;
 mod commands;
 mod ipc;
 mod watchers;
@@ -47,6 +48,30 @@ pub enum Commands {
         /// Previous workspace ID (optional)
         prev: Option<String>,
     },
+    /// Widget management commands
+    Widget {
+        #[command(subcommand)]
+        action: WidgetCommands,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum WidgetCommands {
+    /// Create a new widget from template
+    Create {
+        /// Widget name (will be used as directory name)
+        name: String,
+        /// Template to use (vue-basic, html-basic)
+        #[arg(short, long, default_value = "vue-basic")]
+        template: String,
+    },
+    /// Build a widget manually
+    Build {
+        /// Widget ID to build (or "all" to build all)
+        widget_id: String,
+    },
+    /// List all widgets
+    List,
 }
 
 // Global AppHandle for emitting events from native callbacks
@@ -78,6 +103,13 @@ pub fn run() {
                 };
                 ipc::send_command(&cmd)
             }
+            Commands::Widget { action } => match action {
+                WidgetCommands::Create { name, template } => {
+                    cli::widget::create_widget(&name, &template)
+                }
+                WidgetCommands::Build { widget_id } => cli::widget::build_widget(&widget_id),
+                WidgetCommands::List => cli::widget::list_widgets(),
+            },
         };
         std::process::exit(if success { 0 } else { 1 });
     }
