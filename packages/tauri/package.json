@@ -1,6 +1,6 @@
 {
-  "name": "@arcana/tauri",
-  "version": "0.1.0",
+  "name": "@fluopanel/tauri",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {

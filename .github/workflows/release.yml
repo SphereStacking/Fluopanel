@@ -49,15 +49,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Arcana ${{ github.ref_name }}'
+          releaseName: 'Fluopanel ${{ github.ref_name }}'
           releaseBody: |
             macOS desktop widget framework.
 
             ## Installation
             1. Download the `.dmg` file for your architecture
-            2. Open the dmg and drag Arcana to Applications
-            3. Build your UI and place it in `~/.config/arcana/dist/`
-            4. Launch Arcana
+            2. Open the dmg and drag Fluopanel to Applications
+            3. Build your UI and place it in `~/.config/fluopanel/dist/`
+            4. Launch Fluopanel
           releaseDraft: false
           prerelease: false
           projectPath: packages/tauri

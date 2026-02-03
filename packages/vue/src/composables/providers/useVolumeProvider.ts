@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createVolumeProvider, type VolumeInfo, type VolumeProvider } from '@arcana/providers'
+import { createVolumeProvider, type VolumeInfo, type VolumeProvider } from 'fluopanel-providers'
 
 export function useVolumeProvider() {
   const data = ref<VolumeInfo | null>(null)

@@ -1,5 +1,5 @@
 import { ref, onUnmounted, type Ref } from 'vue'
-import { createSharedStore, type SharedStore } from '@arcana/core'
+import { createSharedStore, type SharedStore } from 'fluopanel-core'
 
 /**
  * Return type for useSharedStore composable
@@ -32,7 +32,7 @@ export interface UseSharedStoreReturn<T> {
  * @example
  * ```vue
  * <script setup lang="ts">
- * import { useSharedStore } from '@arcana/vue'
+ * import { useSharedStore } from 'fluopanel-vue'
  *
  * interface GitHubState {
  *   issues: Issue[]

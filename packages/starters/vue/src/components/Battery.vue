@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import { useBatteryProvider } from '@arcana/vue'
+import { useBatteryProvider } from 'fluopanel-vue'
 
 interface Props {
   direction?: 'horizontal' | 'vertical'

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
-import { useYouTubeMusicProvider } from '@arcana/vue'
+import { useYouTubeMusicProvider } from 'fluopanel-vue'
 
 interface Props {
   direction?: 'horizontal' | 'vertical'

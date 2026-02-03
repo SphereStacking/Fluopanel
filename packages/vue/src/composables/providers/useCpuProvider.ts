@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createCpuProvider, type CpuInfo } from '@arcana/providers'
+import { createCpuProvider, type CpuInfo } from 'fluopanel-providers'
 
 export function useCpuProvider() {
   const data = ref<CpuInfo | null>(null)

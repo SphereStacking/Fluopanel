@@ -1,6 +1,6 @@
 import { computed, ref, onUnmounted, type ComputedRef } from 'vue'
 import { Octokit } from '@octokit/rest'
-import { createSharedStore } from '@arcana/core'
+import { createSharedStore } from 'fluopanel-core'
 
 // Types
 export interface GitHubItem {

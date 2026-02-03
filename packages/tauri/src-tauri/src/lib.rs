@@ -24,7 +24,7 @@ use tauri::http::Response;
 use tauri::{Emitter, Manager};
 
 #[derive(Parser)]
-#[command(name = "arcana")]
+#[command(name = "fluopanel")]
 #[command(about = "Customizable widget framework for macOS")]
 pub struct Cli {
     #[command(subcommand)]
@@ -138,9 +138,9 @@ pub fn run() {
             // Shell commands
             execute_shell,
         ])
-        .register_uri_scheme_protocol("arcana", |ctx, request| {
+        .register_uri_scheme_protocol("fluopanel", |ctx, request| {
             // Combine host and path for routing
-            // arcana://localhost/index.html -> host="localhost", path="/index.html"
+            // fluopanel://localhost/index.html -> host="localhost", path="/index.html"
             let uri = request.uri();
             let host = uri.host().unwrap_or("");
             let uri_path = uri.path();
@@ -203,7 +203,7 @@ pub fn run() {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Arcana - UI Not Found</title>
+    <title>Fluopanel - UI Not Found</title>
     <style>
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -231,8 +231,8 @@ pub fn run() {
     </style>
 </head>
 <body>
-    <h1>Arcana UI Not Found</h1>
-    <p>No user interface distribution was found. Arcana requires a built UI to display.</p>
+    <h1>Fluopanel UI Not Found</h1>
+    <p>No user interface distribution was found. Fluopanel requires a built UI to display.</p>
 
     <h2>Setup Options</h2>
 
@@ -241,7 +241,7 @@ pub fn run() {
     <pre><code>{}</code></pre>
 
     <h3>Option 2: Custom Path</h3>
-    <p>Set <code>ui.distPath</code> in <code>~/.config/arcana/arcana.json</code>:</p>
+    <p>Set <code>ui.distPath</code> in <code>~/.config/fluopanel/fluopanel.json</code>:</p>
     <pre><code>{{
   "version": 2,
   "ui": {{
@@ -251,11 +251,11 @@ pub fn run() {
 
     <h2>Quick Start</h2>
     <ol>
-        <li>Clone the starter: <code>git clone https://github.com/.../arcana-starter-vue</code></li>
+        <li>Clone the starter: <code>git clone https://github.com/.../fluopanel-starter-vue</code></li>
         <li>Install dependencies: <code>npm install</code></li>
         <li>Build: <code>npm run build</code></li>
         <li>Link: <code>ln -s $(pwd)/dist {}</code></li>
-        <li>Restart Arcana</li>
+        <li>Restart Fluopanel</li>
     </ol>
 </body>
 </html>"#,
@@ -294,7 +294,7 @@ pub fn run() {
             }
 
             // Route: User UI - Serve from user's dist folder
-            // Priority: 1. config ui.distPath, 2. ~/.config/arcana/dist/
+            // Priority: 1. config ui.distPath, 2. ~/.config/fluopanel/dist/
             let ui_dist = match commands::config::get_ui_dist_path() {
                 Some(path) => path,
                 None => return ui_not_found_response(),
@@ -373,7 +373,7 @@ pub fn run() {
                     }
                 );
 
-                // Observer for app deactivation (close popovers when clicking outside Arcana)
+                // Observer for app deactivation (close popovers when clicking outside Fluopanel)
                 define_class!(
                     #[unsafe(super(NSObject))]
                     #[name = "AppDeactivateObserver"]
@@ -432,7 +432,7 @@ pub fn run() {
                 });
             }
 
-            // Window position/size is now controlled by useArcanaInit in the frontend
+            // Window position/size is now controlled by useFluopanelInit in the frontend
 
             Ok(())
         })

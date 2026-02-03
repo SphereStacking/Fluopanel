@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createYouTubeMusicProvider, type YouTubeMusicInfo } from '@arcana/providers'
+import { createYouTubeMusicProvider, type YouTubeMusicInfo } from 'fluopanel-providers'
 
 export function useYouTubeMusicProvider() {
   const data = ref<YouTubeMusicInfo | null>(null)

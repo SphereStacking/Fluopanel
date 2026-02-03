@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted, type Ref } from 'vue'
-import type { Provider } from '@arcana/providers'
+import type { Provider } from 'fluopanel-providers'
 
 export function useProvider<T>(provider: Provider<T>, initialValue: T): Ref<T> {
   const data = ref<T>(initialValue) as Ref<T>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import { useCpuProvider } from '@arcana/vue'
+import { useCpuProvider } from 'fluopanel-vue'
 
 interface Props {
   direction?: 'horizontal' | 'vertical'

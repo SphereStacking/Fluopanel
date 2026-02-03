@@ -12,10 +12,10 @@ export interface PositionOptions {
 }
 
 // 初期化オプション（将来拡張可能）
-export interface ArcanaInitOptions {
+export interface FluopanelInitOptions {
   position: PositionOptions
   // theme?: 'light' | 'dark' | 'system'
   // locale?: string
 }
 
-// MonitorInfo is exported from @arcana/core
+// MonitorInfo is exported from fluopanel-core

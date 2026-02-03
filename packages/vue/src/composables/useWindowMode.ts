@@ -6,7 +6,7 @@ import {
   getWindowId as coreGetWindowId,
   hideCoordinatorWindow,
   type WindowContext,
-} from '@arcana/core'
+} from 'fluopanel-core'
 import { waitForAllWindows } from './window-registry'
 
 /**

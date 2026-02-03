@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createBatteryProvider, type BatteryInfo } from '@arcana/providers'
+import { createBatteryProvider, type BatteryInfo } from 'fluopanel-providers'
 
 export function useBatteryProvider() {
   const data = ref<BatteryInfo | null>(null)

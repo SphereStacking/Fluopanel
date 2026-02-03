@@ -9,7 +9,7 @@ import {
   getWindowId,
   type WindowPosition,
   type WindowConfig,
-} from '@arcana/core'
+} from 'fluopanel-core'
 import { registerPendingWindow, markWindowCompleted } from './composables/window-registry'
 
 const props = defineProps<{

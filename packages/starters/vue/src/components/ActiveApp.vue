@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { useActiveAppProvider } from '@arcana/vue'
+import { useActiveAppProvider } from 'fluopanel-vue'
 
 interface Props {
   direction?: 'horizontal' | 'vertical'

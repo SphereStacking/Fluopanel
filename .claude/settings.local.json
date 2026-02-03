@@ -24,7 +24,7 @@
       "Bash(echo:*)",
       "Bash(test:*)",
       "Bash(/bin/ls:*)",
-      "Bash(/bin/cat ~/.config/arcana-bar/dist/index.html)",
+      "Bash(/bin/cat ~/.config/fluopanel/dist/index.html)",
       "Bash(cargo build:*)"
     ]
   }

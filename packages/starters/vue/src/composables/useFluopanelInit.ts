@@ -1,8 +1,8 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import type { ArcanaInitOptions, CSSValue } from '../types/arcana'
-import type { MonitorInfo } from '@arcana/core'
+import type { FluopanelInitOptions, CSSValue } from '../types/fluopanel'
+import type { MonitorInfo } from 'fluopanel-core'
 
 /**
  * calc() 式を評価する
@@ -68,10 +68,10 @@ function toPixels(
 }
 
 /**
- * Arcana 初期化 composable
+ * Fluopanel 初期化 composable
  * ウィンドウ位置・サイズをCSS absoluteライクに指定可能
  */
-export function useArcanaInit(options: ArcanaInitOptions) {
+export function useFluopanelInit(options: FluopanelInitOptions) {
   const monitors = ref<MonitorInfo[]>([])
   let unlisten: UnlistenFn | null = null
 

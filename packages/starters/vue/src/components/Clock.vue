@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useDateProvider } from '@arcana/vue'
+import { useDateProvider } from 'fluopanel-vue'
 
 interface Props {
   direction?: 'horizontal' | 'vertical'

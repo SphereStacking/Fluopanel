@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createAerospaceProvider, type Workspace, type FocusChangeEvent, type AerospaceProvider } from '@arcana/providers'
+import { createAerospaceProvider, type Workspace, type FocusChangeEvent, type AerospaceProvider } from 'fluopanel-providers'
 
 export function useAerospaceProvider() {
   const workspaces = ref<Workspace[]>([])

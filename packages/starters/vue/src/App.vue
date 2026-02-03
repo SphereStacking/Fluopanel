@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Window, useCoordinator, Popover, usePopoverMode } from '@arcana/vue'
+import { Window, useCoordinator, Popover, usePopoverMode } from 'fluopanel-vue'
 
 // Bar components
 import HorizontalBar from './components/bars/HorizontalBar.vue'

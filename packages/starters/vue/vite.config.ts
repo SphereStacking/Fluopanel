@@ -12,7 +12,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['@arcana/vue'],
+    include: ['fluopanel-vue'],
   },
   clearScreen: false,
   server: {

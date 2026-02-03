@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createMediaProvider, type MediaInfo, type MediaProvider } from '@arcana/providers'
+import { createMediaProvider, type MediaInfo, type MediaProvider } from 'fluopanel-providers'
 
 export function useMediaProvider() {
   const data = ref<MediaInfo | null>(null)

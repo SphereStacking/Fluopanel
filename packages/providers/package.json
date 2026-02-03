@@ -1,7 +1,7 @@
 {
-  "name": "@arcana/providers",
-  "version": "0.1.0",
-  "description": "System data providers for Arcana widget framework",
+  "name": "fluopanel-providers",
+  "version": "0.0.1",
+  "description": "System data providers for Fluopanel widget framework",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,5 +23,15 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SphereStacking/Fluopanel.git",
+    "directory": "packages/providers"
+  },
+  "keywords": ["fluopanel", "widget", "macos", "tauri", "desktop", "system", "battery", "cpu", "memory"],
+  "publishConfig": {
+    "access": "public"
+  }
 }

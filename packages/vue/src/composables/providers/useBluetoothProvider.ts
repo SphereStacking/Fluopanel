@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createBluetoothProvider, type BluetoothInfo, type BluetoothProvider } from '@arcana/providers'
+import { createBluetoothProvider, type BluetoothInfo, type BluetoothProvider } from 'fluopanel-providers'
 
 export function useBluetoothProvider() {
   const data = ref<BluetoothInfo | null>(null)

@@ -98,37 +98,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a23eb6b1614318a8071c9b2521f36b424b2c83db5eb3a0fead4a6c0809af6e61"
 
 [[package]]
-name = "arcana"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "battery",
- "block2 0.6.2",
- "clap",
- "core-foundation-sys 0.8.7",
- "coreaudio-sys",
- "dirs 5.0.1",
- "lazy_static",
- "notify",
- "objc2 0.6.3",
- "objc2-app-kit 0.3.2",
- "objc2-foundation 0.3.2",
- "once_cell",
- "reqwest",
- "serde",
- "serde_json",
- "shellexpand",
- "sysinfo",
- "tauri",
- "tauri-build",
- "tauri-nspanel",
- "tauri-plugin-mcp-bridge",
- "tauri-plugin-shell",
- "tokio",
- "url",
-]
-
-[[package]]
 name = "atk"
 version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -997,6 +966,37 @@ checksum = "b375d6465b98090a5f25b1c7703f3859783755aa9a80433b36e0379a3ec2f369"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
+]
+
+[[package]]
+name = "fluopanel"
+version = "0.0.1"
+dependencies = [
+ "base64 0.22.1",
+ "battery",
+ "block2 0.6.2",
+ "clap",
+ "core-foundation-sys 0.8.7",
+ "coreaudio-sys",
+ "dirs 5.0.1",
+ "lazy_static",
+ "notify",
+ "objc2 0.6.3",
+ "objc2-app-kit 0.3.2",
+ "objc2-foundation 0.3.2",
+ "once_cell",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "shellexpand",
+ "sysinfo",
+ "tauri",
+ "tauri-build",
+ "tauri-nspanel",
+ "tauri-plugin-mcp-bridge",
+ "tauri-plugin-shell",
+ "tokio",
+ "url",
 ]
 
 [[package]]

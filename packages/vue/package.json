@@ -1,7 +1,7 @@
 {
-  "name": "@arcana/vue",
-  "version": "0.1.0",
-  "description": "Vue bindings for Arcana widget framework",
+  "name": "fluopanel-vue",
+  "version": "0.0.1",
+  "description": "Vue bindings for Fluopanel widget framework",
   "type": "module",
   "main": "./src/index.ts",
   "module": "./src/index.ts",
@@ -14,8 +14,18 @@
   },
   "peerDependencies": {
     "vue": "^3.4.0",
-    "@arcana/core": "^0.1.0",
-    "@arcana/providers": "^0.1.0",
+    "fluopanel-core": "^0.0.1",
+    "fluopanel-providers": "^0.0.1",
     "@tauri-apps/api": "^2.0.0"
+  },
+  "keywords": ["fluopanel", "vue", "widget", "macos", "tauri", "desktop"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SphereStacking/Fluopanel.git",
+    "directory": "packages/vue"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

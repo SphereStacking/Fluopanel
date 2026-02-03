@@ -51,8 +51,8 @@ export interface UiConfig {
   distPath?: string
 }
 
-// Global Arcana configuration (arcana.json schema)
-export interface ArcanaConfig {
+// Global Fluopanel configuration (fluopanel.json schema)
+export interface FluopanelConfig {
   version: number           // Schema version (2)
   theme: ThemeConfig
   settings: GlobalSettings

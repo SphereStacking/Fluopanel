@@ -155,7 +155,7 @@ fn build_popover_url(popover_id: &str, max_height: u32) -> Result<WebviewUrl, St
         )
     } else {
         format!(
-            "arcana://localhost/?popover={}&maxHeight={}",
+            "fluopanel://localhost/?popover={}&maxHeight={}",
             popover_id, max_height
         )
     };

@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default capabilities for Arcana",
+  "description": "Default capabilities for Fluopanel",
   "windows": ["main", "inline-window-*", "window-*", "popover-*"],
   "permissions": [
     "core:default",

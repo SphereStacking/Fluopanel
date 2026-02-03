@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createDiskProvider, type DiskInfo, type DiskProvider } from '@arcana/providers'
+import { createDiskProvider, type DiskInfo, type DiskProvider } from 'fluopanel-providers'
 
 export function useDiskProvider(mountPoint = '/') {
   const data = ref<DiskInfo | null>(null)

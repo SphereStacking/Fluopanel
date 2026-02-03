@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ArcanaIconSvg from '@/assets/icons/arcana.svg?component'
+import FluopanelIconSvg from '@/assets/icons/fluopanel.svg?component'
 
 interface Props {
   class?: string
@@ -8,5 +8,5 @@ defineProps<Props>()
 </script>
 
 <template>
-  <ArcanaIconSvg :class="$props.class" />
+  <FluopanelIconSvg :class="$props.class" />
 </template>

@@ -1,8 +1,8 @@
-# Arcana アプリケーション仕様書
+# Fluopanel アプリケーション仕様書
 
 ## 概要
 
-Arcana は macOS 用のカスタマイズ可能なデスクトップウィジェットフレームワーク。Tauri 2.0 (Rust) バックエンドと Vue 3 フロントエンドで構築。
+Fluopanel は macOS 用のカスタマイズ可能なデスクトップウィジェットフレームワーク。Tauri 2.0 (Rust) バックエンドと Vue 3 フロントエンドで構築。
 
 ---
 
@@ -28,11 +28,11 @@ packages/
 ├─────────────────────────────────────┤
 │  Starters (Vue)                     │  ← フレームワーク固有実装
 ├─────────────────────────────────────┤
-│  @arcana/vue                        │  ← Vue コンポーネント・composables
+│  @fluopanel/vue                     │  ← Vue コンポーネント・composables
 ├─────────────────────────────────────┤
-│  @arcana/providers                  │  ← システムデータプロバイダー
+│  @fluopanel/providers               │  ← システムデータプロバイダー
 ├─────────────────────────────────────┤
-│  @arcana/core                       │  ← WindowController, PopoverController
+│  @fluopanel/core                    │  ← WindowController, PopoverController
 ├─────────────────────────────────────┤
 │  Tauri (Rust)                       │  ← ウィンドウ管理, IPC, macOS統合
 └─────────────────────────────────────┘
@@ -59,7 +59,7 @@ src/
 │   ├── manager.rs      # ウィンドウ作成・配置・ライフサイクル
 │   └── discovery.rs    # ウィジェットマニフェスト検出
 └── ipc/                # Unix ソケット IPC
-    └── mod.rs          # /tmp/arcana.sock サーバー
+    └── mod.rs          # /tmp/fluopanel.sock サーバー
 ```
 
 ### Tauri コマンド一覧
@@ -139,7 +139,7 @@ app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
 ```bash
 # Unix ソケット
-/tmp/arcana.sock
+/tmp/fluopanel.sock
 
 # プロトコル
 focus-changed:{workspace}:{monitor}
@@ -158,7 +158,7 @@ focus-changed:{workspace}:{monitor}
 // ウィンドウ管理
 export { WindowController } from './window-controller'
 export { PopoverController } from './popover-controller'
-export { ArcanaWindow } from './window'
+export { FluopanelWindow } from './window'
 export { WindowManager } from './window-manager'
 
 // 型定義
@@ -300,7 +300,7 @@ src/
 │       ├── GitHubPRsPopover.vue
 │       └── TestPopoverContent.vue
 └── composables/
-    ├── useArcanaInit.ts # 初期化フック
+    ├── useFluopanelInit.ts # 初期化フック
     └── useSharedStore.ts # クロスウィンドウ状態共有
 ```
 
@@ -423,7 +423,7 @@ interface Provider<T> {
 
 ### 場所
 ```
-~/.config/arcana/
+~/.config/fluopanel/
 ├── config.json           # グローバル設定
 └── widgets/              # ユーザー定義ウィジェット
     └── my-widget/
@@ -433,7 +433,7 @@ interface Provider<T> {
 
 ### カスタムプロトコル
 ```
-arcana://window/{window_id}/{entry}
+fluopanel://window/{window_id}/{entry}
 ```
 
 ---

@@ -1,7 +1,7 @@
 {
-  "name": "@arcana/core",
-  "version": "0.1.0",
-  "description": "Core library for Arcana widget framework",
+  "name": "fluopanel-core",
+  "version": "0.0.1",
+  "description": "Core library for Fluopanel widget framework",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,5 +23,15 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SphereStacking/Fluopanel.git",
+    "directory": "packages/core"
+  },
+  "keywords": ["fluopanel", "widget", "macos", "tauri", "desktop"],
+  "publishConfig": {
+    "access": "public"
+  }
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Build shared libraries for widget runtime
- * Outputs to src-tauri/libs/ which is served via arcana://lib/
+ * Outputs to src-tauri/libs/ which is served via fluopanel://lib/
  */
 
 import { build } from 'esbuild'
@@ -18,8 +18,8 @@ async function main() {
 
   console.log('Building shared libraries for widget runtime...\n')
 
-  // 1. Bundle @arcana/providers
-  console.log('  Building @arcana/providers...')
+  // 1. Bundle fluopanel-providers
+  console.log('  Building fluopanel-providers...')
   await build({
     entryPoints: [join(__dirname, '../providers/dist/index.js')],
     bundle: true,

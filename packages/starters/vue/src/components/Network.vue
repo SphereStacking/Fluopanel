@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import { useNetworkProvider } from '@arcana/vue'
+import { useNetworkProvider } from 'fluopanel-vue'
 
 const { data: network } = useNetworkProvider()
 

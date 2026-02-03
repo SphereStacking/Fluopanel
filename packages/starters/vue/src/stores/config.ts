@@ -1,8 +1,8 @@
 import { ref, readonly } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import type { ArcanaConfig } from '@arcana/core'
+import type { FluopanelConfig } from 'fluopanel-core'
 
-const defaultConfig: ArcanaConfig = {
+const defaultConfig: FluopanelConfig = {
   version: 2,
   theme: {
     mode: 'system',
@@ -15,7 +15,7 @@ const defaultConfig: ArcanaConfig = {
   secrets: undefined,
 }
 
-const config = ref<ArcanaConfig>(defaultConfig)
+const config = ref<FluopanelConfig>(defaultConfig)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
@@ -24,7 +24,7 @@ export function useConfig() {
     isLoading.value = true
     error.value = null
     try {
-      const loaded = await invoke<ArcanaConfig>('get_config')
+      const loaded = await invoke<FluopanelConfig>('get_config')
       config.value = { ...defaultConfig, ...loaded }
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e)
@@ -34,7 +34,7 @@ export function useConfig() {
     }
   }
 
-  const saveConfig = async (newConfig: Partial<ArcanaConfig>) => {
+  const saveConfig = async (newConfig: Partial<FluopanelConfig>) => {
     const merged = { ...config.value, ...newConfig }
     try {
       await invoke('save_config', { config: merged })

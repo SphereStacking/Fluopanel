@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createBrightnessProvider, type BrightnessInfo, type BrightnessProvider } from '@arcana/providers'
+import { createBrightnessProvider, type BrightnessInfo, type BrightnessProvider } from 'fluopanel-providers'
 
 export function useBrightnessProvider() {
   const data = ref<BrightnessInfo | null>(null)

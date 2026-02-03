@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-Arcana は Tauri 2 (Rust バックエンド) で構築された macOS 用カスタマイズ可能なウィジェットフレームワークです。ユーザーは Vue/React/HTML でカスタムウィジェットを作成し、メニューバー型やフローティング型のウィジェットを画面に配置できます。
+Fluopanel は Tauri 2 (Rust バックエンド) で構築された macOS 用カスタマイズ可能なウィジェットフレームワークです。ユーザーは Vue/React/HTML でカスタムウィジェットを作成し、メニューバー型やフローティング型のウィジェットを画面に配置できます。
 
 ## 設計原則
 
@@ -14,7 +14,7 @@ Arcana は Tauri 2 (Rust バックエンド) で構築された macOS 用カス�
 - 「動いているから触らない」ではなく「より良くできるなら変える」
 
 ### フレームワーク非依存
-- **Core パッケージ (`@arcana/core`) はフレームワーク非依存であること**
+- **Core パッケージ (`@fluopanel/core`) はフレームワーク非依存であること**
 - フレームワーク固有のコード（ライフサイクル、リアクティビティ）は各 starter に配置
 - Core には純粋な TypeScript ロジックのみ
 
@@ -23,11 +23,11 @@ Arcana は Tauri 2 (Rust バックエンド) で構築された macOS 用カス�
 ┌─────────────────────────────────────┐
 │  Starters (Vue)                     │  ← App.vue でウィジェットを定義
 ├─────────────────────────────────────┤
-│  @arcana/vue                        │  ← Vue コンポーネント・composables
+│  @fluopanel/vue                     │  ← Vue コンポーネント・composables
 ├─────────────────────────────────────┤
-│  @arcana/providers                  │  ← システムデータプロバイダー
+│  @fluopanel/providers               │  ← システムデータプロバイダー
 ├─────────────────────────────────────┤
-│  @arcana/core                       │  ← WindowController, PopoverController
+│  @fluopanel/core                    │  ← WindowController, PopoverController
 ├─────────────────────────────────────┤
 │  Tauri (Rust)                       │  ← ウィンドウ管理, IPC, macOS統合
 └─────────────────────────────────────┘
@@ -100,22 +100,22 @@ packages/
 ### 設定ファイル
 
 ```
-~/.config/arcana/
-└── arcana.json           # グローバル設定
+~/.config/fluopanel/
+└── fluopanel.json           # グローバル設定
 ```
 
 ウィジェットは `App.vue` 内で `<Window>` コンポーネントとして定義します。
 
 ### パッケージ依存関係
 
-- `@arcana/tauri` → `@arcana/starter-vue` のビルドをフロントエンドとして実行
-- `@arcana/starter-vue` → `@arcana/core` (ウィジェット管理) + `@arcana/providers` (システムデータ)
-- `@arcana/core` → Tauri IPC コマンドを TypeScript インターフェースでラップ
-- `@arcana/providers` → Tauri IPC コマンドをプロバイダーパターンでラップ
+- `@fluopanel/tauri` → `@fluopanel/starter-vue` のビルドをフロントエンドとして実行
+- `@fluopanel/starter-vue` → `@fluopanel/core` (ウィジェット管理) + `@fluopanel/providers` (システムデータ)
+- `@fluopanel/core` → Tauri IPC コマンドを TypeScript インターフェースでラップ
+- `@fluopanel/providers` → Tauri IPC コマンドをプロバイダーパターンでラップ
 
 ### プロバイダーパターン
 
-すべてのシステムデータは `@arcana/providers` を通じて流れます:
+すべてのシステムデータは `@fluopanel/providers` を通じて流れます:
 
 ```typescript
 interface Provider<T> {
@@ -130,8 +130,8 @@ interface Provider<T> {
 
 | 種類 | パターン |
 |------|---------|
-| 公式パッケージ | `@arcana/{name}` |
-| サードパーティプロバイダー | `arcana-provider-{name}` |
+| 公式パッケージ | `@fluopanel/{name}` |
+| サードパーティプロバイダー | `fluopanel-provider-{name}` |
 
 ### IPC レイヤー
 
@@ -145,10 +145,10 @@ interface Provider<T> {
 
 ### CLI & IPC
 
-Unix ソケット (`/tmp/arcana.sock`) を使用した IPC:
+Unix ソケット (`/tmp/fluopanel.sock`) を使用した IPC:
 
 ```bash
-arcana emit workspace-changed   # ワークスペース変更通知
+fluopanel emit workspace-changed   # ワークスペース変更通知
 ```
 
 - Aerospace の `exec-on-workspace-change` から呼び出し可能
@@ -156,7 +156,7 @@ arcana emit workspace-changed   # ワークスペース変更通知
 
 ### カスタムプロトコル
 
-`arcana://lib/` プロトコルで共有ライブラリ（Vue, Tauri API）を配信します。
+`fluopanel://lib/` プロトコルで共有ライブラリ（Vue, Tauri API）を配信します。
 
 ### ウィンドウ動作
 

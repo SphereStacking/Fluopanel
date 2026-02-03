@@ -1,5 +1,5 @@
 {
-  "name": "arcana",
+  "name": "fluopanel",
   "version": "0.0.1",
   "private": true,
   "description": "Customizable widget framework for macOS",
@@ -11,20 +11,20 @@
     "packages/starters/*"
   ],
   "scripts": {
-    "dev": "pkill -f 'arcana' || true; lsof -ti:1420 | xargs kill -9 2>/dev/null || true; concurrently -n libs,tauri,vue -c blue,yellow,green \"npm run dev:libs\" \"npm run dev:tauri\" \"npm run dev:vue\"",
-    "dev:tauri": "npm run tauri:dev -w @arcana/tauri",
-    "dev:vue": "npm run dev -w @arcana/starter-vue",
+    "dev": "pkill -f 'fluopanel' || true; lsof -ti:1420 | xargs kill -9 2>/dev/null || true; concurrently -n libs,tauri,vue -c blue,yellow,green \"npm run dev:libs\" \"npm run dev:tauri\" \"npm run dev:vue\"",
+    "dev:tauri": "npm run tauri:dev -w @fluopanel/tauri",
+    "dev:vue": "npm run dev -w @fluopanel/starter-vue",
     "dev:libs": "concurrently -n core,providers \"npm run dev:core\" \"npm run dev:providers\"",
-    "dev:core": "npm run dev -w @arcana/core",
-    "dev:providers": "npm run dev -w @arcana/providers",
+    "dev:core": "npm run dev -w fluopanel-core",
+    "dev:providers": "npm run dev -w fluopanel-providers",
 
     "build": "npm run build:vue && npm run build:tauri",
-    "build:tauri": "npm run tauri:build -w @arcana/tauri",
-    "build:vue": "npm run build -w @arcana/starter-vue",
+    "build:tauri": "npm run tauri:build -w @fluopanel/tauri",
+    "build:vue": "npm run build -w @fluopanel/starter-vue",
 
-    "build:libs": "npm run build -w @arcana/core && npm run build -w @arcana/providers",
+    "build:libs": "npm run build -w fluopanel-core && npm run build -w fluopanel-providers",
 
-    "tauri": "npm run tauri -w @arcana/tauri",
+    "tauri": "npm run tauri -w @fluopanel/tauri",
 
     "release": "node scripts/release.mjs",
     "release:patch": "npm version patch --no-git-tag-version && npm run release",

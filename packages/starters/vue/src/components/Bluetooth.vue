@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import { useBluetoothProvider } from '@arcana/vue'
+import { useBluetoothProvider } from 'fluopanel-vue'
 
 const { data: bluetooth, toggle } = useBluetoothProvider()
 

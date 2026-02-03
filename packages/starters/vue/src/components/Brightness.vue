@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { Icon } from '@iconify/vue'
-import { useBrightnessProvider } from '@arcana/vue'
+import { useBrightnessProvider } from 'fluopanel-vue'
 
 const { data: brightness, setBrightness } = useBrightnessProvider()
 

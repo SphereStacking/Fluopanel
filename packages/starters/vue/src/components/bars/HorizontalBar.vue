@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useNativeMenu } from '@arcana/vue'
-import { executeShell } from '@arcana/core'
+import { useNativeMenu } from 'fluopanel-vue'
+import { executeShell } from 'fluopanel-core'
 
 // Native settings menu - SF Symbols in label (no icon image needed)
 const settingsMenu = useNativeMenu({
   items: [
-    { id: 'arcana', label: '􀍟 Arcana 設定', accelerator: 'CmdOrCtrl+,' },
+    { id: 'fluopanel', label: '􀍟 Fluopanel 設定', accelerator: 'CmdOrCtrl+,' },
     { id: 'aerospace', label: '􀏜 Aerospace 設定' },
     { type: 'separator' },
     { id: 'zshrc', label: '􀪏 .zshrc' },
@@ -13,7 +13,7 @@ const settingsMenu = useNativeMenu({
   ],
   onSelect: async (id) => {
     const commands: Record<string, string> = {
-      arcana: 'code ~/.config/arcana/config.json',
+      fluopanel: 'code ~/.config/fluopanel/config.json',
       aerospace: 'code ~/.config/aerospace/aerospace.toml',
       zshrc: 'code ~/.zshrc',
       claude: 'code ~/.claude',
@@ -25,7 +25,7 @@ const settingsMenu = useNativeMenu({
 })
 
 // Bar components
-import ArcanaIcon from '../icons/ArcanaIcon.vue'
+import FluopanelIcon from '../icons/FluopanelIcon.vue'
 import Workspaces from '../Workspaces.vue'
 import ActiveApp from '../ActiveApp.vue'
 import Clock from '../Clock.vue'
@@ -67,7 +67,7 @@ import GitHub from '../GitHub.vue'
 
     <!-- Left section: Logo, Workspaces, Active App -->
     <nav class="flex items-center gap-2 z-10">
-      <!-- Arcana Logo - Settings Menu (Native) -->
+      <!-- Fluopanel Logo - Settings Menu (Native) -->
       <button
         type="button"
         class="
@@ -79,7 +79,7 @@ import GitHub from '../GitHub.vue'
         "
         @click="settingsMenu.popup()"
       >
-        <ArcanaIcon
+        <FluopanelIcon
           class="
             w-4 h-4
             text-[var(--text-secondary)]

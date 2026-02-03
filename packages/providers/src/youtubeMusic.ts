@@ -11,7 +11,7 @@ declare const window: Window & {
 
 // Pear Desktop API (port 26538)
 const PEAR_API = 'http://localhost:26538'
-const PEAR_APP_ID = 'arcana'
+const PEAR_APP_ID = 'fluopanel'
 
 // YTM Desktop API (port 9863)
 const YTM_API = 'http://localhost:9863'

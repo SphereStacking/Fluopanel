@@ -9,7 +9,7 @@ import {
   type PopoverContext,
   type PopoverAnchor,
   type PopoverAlign,
-} from '@arcana/core'
+} from 'fluopanel-core'
 
 export type { PopoverAnchor, PopoverAlign }
 

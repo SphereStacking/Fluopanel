@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createActiveAppProvider, type ActiveAppInfo } from '@arcana/providers'
+import { createActiveAppProvider, type ActiveAppInfo } from 'fluopanel-providers'
 
 export function useActiveAppProvider() {
   const data = ref<ActiveAppInfo | null>(null)

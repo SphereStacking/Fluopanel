@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Workspace } from '@arcana/providers'
-import { useAerospaceProvider } from '@arcana/vue'
+import type { Workspace } from 'fluopanel-providers'
+import { useAerospaceProvider } from 'fluopanel-vue'
 
 interface Props {
   direction?: 'horizontal' | 'vertical'

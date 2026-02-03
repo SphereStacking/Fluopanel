@@ -5,7 +5,7 @@ use tauri::{AppHandle, Emitter, Manager};
 
 use crate::commands::{aerospace_get_workspaces_sync, get_workspace_by_id};
 
-const SOCKET_PATH: &str = "/tmp/arcana.sock";
+const SOCKET_PATH: &str = "/tmp/fluopanel.sock";
 
 /// Start the IPC server (called from main app)
 pub fn start_server(app: AppHandle) {
@@ -100,7 +100,7 @@ pub fn send_command(event: &str) -> bool {
     let socket_path = Path::new(SOCKET_PATH);
 
     if !socket_path.exists() {
-        eprintln!("arcana is not running (socket not found)");
+        eprintln!("fluopanel is not running (socket not found)");
         return false;
     }
 
@@ -113,7 +113,7 @@ pub fn send_command(event: &str) -> bool {
             true
         }
         Err(e) => {
-            eprintln!("Failed to connect to arcana: {}", e);
+            eprintln!("Failed to connect to fluopanel: {}", e);
             false
         }
     }

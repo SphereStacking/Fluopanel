@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { Icon } from '@iconify/vue'
-import { useVolumeProvider } from '@arcana/vue'
+import { useVolumeProvider } from 'fluopanel-vue'
 
 const { data: volume, setVolume, toggleMute } = useVolumeProvider()
 

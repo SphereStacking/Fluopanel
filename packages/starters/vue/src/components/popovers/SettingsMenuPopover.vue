@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { executeShell } from '@arcana/core'
+import { executeShell } from 'fluopanel-core'
 import { Icon } from '@iconify/vue'
 
 const menuItems = [
-  { label: 'Arcana 設定', icon: 'mdi:cog', command: 'code ~/.config/arcana/config.json' },
+  { label: 'Fluopanel 設定', icon: 'mdi:cog', command: 'code ~/.config/fluopanel/config.json' },
   { label: 'Aerospace 設定', icon: 'mdi:window-restore', command: 'code ~/.config/aerospace/aerospace.toml' },
   { label: '.zshrc', icon: 'mdi:console', command: 'code ~/.zshrc' },
   { label: '.claude/', icon: 'mdi:folder-cog', command: 'code ~/.claude' },

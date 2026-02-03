@@ -1,6 +1,6 @@
 {
-  "name": "@arcana/starter-vue",
-  "version": "0.1.0",
+  "name": "@fluopanel/starter-vue",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@arcana/core": "*",
-    "@arcana/providers": "*",
-    "@arcana/vue": "*",
+    "fluopanel-core": "*",
+    "fluopanel-providers": "*",
+    "fluopanel-vue": "*",
     "@iconify/vue": "^5.0.0",
     "@octokit/rest": "^22.0.1",
     "@tauri-apps/api": "^2.0.0",

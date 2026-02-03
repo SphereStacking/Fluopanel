@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
-import { usePopover } from '@arcana/vue'
+import { usePopover } from 'fluopanel-vue'
 import { useGitHub } from '../composables/useGitHub'
 
 interface Props {

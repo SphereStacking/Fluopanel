@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use tauri::command;
 
 // ============================================
-// Global Config (arcana.json)
+// Global Config (fluopanel.json)
 // ============================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,7 +42,7 @@ pub struct UiConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ArcanaConfig {
+pub struct FluopanelConfig {
     pub version: u32,
     pub theme: ThemeConfig,
     pub settings: GlobalSettings,
@@ -52,9 +52,9 @@ pub struct ArcanaConfig {
     pub ui: Option<UiConfig>,
 }
 
-impl Default for ArcanaConfig {
+impl Default for FluopanelConfig {
     fn default() -> Self {
-        ArcanaConfig {
+        FluopanelConfig {
             version: 2,
             theme: ThemeConfig {
                 mode: "system".to_string(),
@@ -76,19 +76,19 @@ impl Default for ArcanaConfig {
 
 pub fn get_config_dir() -> PathBuf {
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    home.join(".config").join("arcana")
+    home.join(".config").join("fluopanel")
 }
 
 fn get_config_path() -> PathBuf {
-    get_config_dir().join("arcana.json")
+    get_config_dir().join("fluopanel.json")
 }
 
 /// Get the UI dist path based on config priority
 /// Returns: Some(path) if found, None if no UI available
 ///
 /// Priority:
-/// 1. arcana.json ui.distPath (if set and exists)
-/// 2. ~/.config/arcana/dist/ (if exists)
+/// 1. fluopanel.json ui.distPath (if set and exists)
+/// 2. ~/.config/fluopanel/dist/ (if exists)
 /// 3. None
 pub fn get_ui_dist_path() -> Option<PathBuf> {
     // 1. Check config for custom distPath
@@ -113,7 +113,7 @@ pub fn get_ui_dist_path() -> Option<PathBuf> {
         }
     }
 
-    // 2. Check default location ~/.config/arcana/dist/
+    // 2. Check default location ~/.config/fluopanel/dist/
     let default_path = get_config_dir().join("dist");
     if default_path.exists() && default_path.join("index.html").exists() {
         return Some(default_path);
@@ -124,14 +124,14 @@ pub fn get_ui_dist_path() -> Option<PathBuf> {
 }
 
 /// Synchronous config reader for protocol handler
-fn get_config_sync() -> Result<ArcanaConfig, String> {
+fn get_config_sync() -> Result<FluopanelConfig, String> {
     let config_path = get_config_path();
     if config_path.exists() {
         let content = std::fs::read_to_string(&config_path)
             .map_err(|e| format!("Failed to read config: {}", e))?;
         serde_json::from_str(&content).map_err(|e| format!("Failed to parse config: {}", e))
     } else {
-        Ok(ArcanaConfig::default())
+        Ok(FluopanelConfig::default())
     }
 }
 
@@ -140,22 +140,22 @@ fn get_config_sync() -> Result<ArcanaConfig, String> {
 // ============================================
 
 #[command]
-pub fn get_config() -> Result<ArcanaConfig, String> {
+pub fn get_config() -> Result<FluopanelConfig, String> {
     let config_path = get_config_path();
 
     if config_path.exists() {
         let content = fs::read_to_string(&config_path)
             .map_err(|e| format!("Failed to read config: {}", e))?;
-        let config: ArcanaConfig = serde_json::from_str(&content)
+        let config: FluopanelConfig = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse config: {}", e))?;
         Ok(config)
     } else {
-        Ok(ArcanaConfig::default())
+        Ok(FluopanelConfig::default())
     }
 }
 
 #[command]
-pub fn save_config(config: ArcanaConfig) -> Result<(), String> {
+pub fn save_config(config: FluopanelConfig) -> Result<(), String> {
     let config_path = get_config_path();
 
     // Create parent directories if they don't exist

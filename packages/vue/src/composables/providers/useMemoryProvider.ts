@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createMemoryProvider, type MemoryInfo } from '@arcana/providers'
+import { createMemoryProvider, type MemoryInfo } from 'fluopanel-providers'
 
 export function useMemoryProvider() {
   const data = ref<MemoryInfo | null>(null)

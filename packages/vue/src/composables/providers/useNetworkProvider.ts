@@ -1,5 +1,5 @@
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createNetworkProvider, type NetworkInfo } from '@arcana/providers'
+import { createNetworkProvider, type NetworkInfo } from 'fluopanel-providers'
 
 export function useNetworkProvider() {
   const data = ref<NetworkInfo | null>(null)

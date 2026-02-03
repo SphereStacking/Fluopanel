@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { getPopoverContext } from '@arcana/core'
+import { getPopoverContext } from 'fluopanel-core'
 import { useAutoSize } from './composables/useAutoSize'
 
 const props = defineProps<{
