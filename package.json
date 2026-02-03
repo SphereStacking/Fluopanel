@@ -1,6 +1,6 @@
 {
   "name": "arcana",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "description": "Customizable widget framework for macOS",
   "workspaces": [
@@ -24,7 +24,12 @@
 
     "build:libs": "npm run build -w @arcana/core && npm run build -w @arcana/providers",
 
-    "tauri": "npm run tauri -w @arcana/tauri"
+    "tauri": "npm run tauri -w @arcana/tauri",
+
+    "release": "node scripts/release.mjs",
+    "release:patch": "npm version patch --no-git-tag-version && npm run release",
+    "release:minor": "npm version minor --no-git-tag-version && npm run release",
+    "release:major": "npm version major --no-git-tag-version && npm run release"
   },
   "engines": {
     "node": ">=18"
