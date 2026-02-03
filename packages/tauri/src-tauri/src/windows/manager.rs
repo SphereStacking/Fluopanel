@@ -1,4 +1,3 @@
-use super::discovery::{WindowManifest, WindowType};
 use serde::Deserialize;
 use tauri::{command, AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
@@ -289,76 +288,6 @@ pub fn hide_window(app: AppHandle, label: String) -> Result<(), String> {
     }
 }
 
-/// Create a new window from manifest
-#[command]
-pub async fn create_window(
-    app: AppHandle,
-    window_id: String,
-    instance_id: String,
-    manifest: WindowManifest,
-) -> Result<(), String> {
-    let label = format!("window-{}-{}", window_id, instance_id);
-
-    // Check if window already exists
-    if app.get_webview_window(&label).is_some() {
-        return Err(format!("Window '{}' already exists", label));
-    }
-
-    // Determine URL: dev mode or production
-    let url = if cfg!(debug_assertions) && manifest.dev_url.is_some() {
-        WebviewUrl::External(
-            manifest
-                .dev_url
-                .as_ref()
-                .unwrap()
-                .parse()
-                .map_err(|e| format!("Invalid dev URL: {}", e))?,
-        )
-    } else {
-        // Custom protocol: arcana://window/{window_id}/{entry}
-        let url_str = format!("arcana://window/{}/{}", window_id, manifest.entry);
-        WebviewUrl::CustomProtocol(url_str.parse().map_err(|e| format!("Invalid URL: {}", e))?)
-    };
-
-    // Get window config with defaults based on window type
-    let window_config = manifest.window.as_ref();
-    let is_bar = matches!(manifest.window_type, WindowType::Bar);
-
-    let transparent = window_config
-        .and_then(|c| c.transparent)
-        .unwrap_or(true);
-    let always_on_top = window_config
-        .and_then(|c| c.always_on_top)
-        .unwrap_or(is_bar);
-    let resizable = window_config
-        .and_then(|c| c.resizable)
-        .unwrap_or(!is_bar);
-    let decorations = window_config
-        .and_then(|c| c.decorations)
-        .unwrap_or(false);
-    let skip_taskbar = window_config
-        .and_then(|c| c.skip_taskbar)
-        .unwrap_or(true);
-
-    // Build the window
-    let builder = WebviewWindowBuilder::new(&app, &label, url)
-        .title(&manifest.name)
-        .decorations(decorations)
-        .transparent(transparent)
-        .always_on_top(always_on_top)
-        .skip_taskbar(skip_taskbar)
-        .resizable(resizable)
-        .visible(false) // Hidden initially, shown after positioning
-        .focused(false);
-
-    let _window = builder.build().map_err(|e| e.to_string())?;
-
-    // Note: Position will be applied by the frontend via set_window_geometry
-    // The frontend handles CSS-like positioning (top, left, right, bottom, etc.)
-
-    Ok(())
-}
-
 /// Close a window
 #[command]
 pub fn close_window(app: AppHandle, label: String) -> Result<(), String> {
@@ -368,16 +297,6 @@ pub fn close_window(app: AppHandle, label: String) -> Result<(), String> {
     } else {
         Err(format!("Window '{}' not found", label))
     }
-}
-
-/// Get all active windows
-#[command]
-pub fn get_windows(app: AppHandle) -> Vec<String> {
-    app.webview_windows()
-        .keys()
-        .filter(|k| k.starts_with("window-") || k.starts_with("inline-window-"))
-        .cloned()
-        .collect()
 }
 
 /// Show a window (after positioning is applied)

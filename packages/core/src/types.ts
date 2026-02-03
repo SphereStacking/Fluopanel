@@ -1,3 +1,7 @@
+// ============================================
+// Window Position Types
+// ============================================
+
 // Window positioning (all values in pixels)
 // Position defines a bounding box on screen
 export interface WindowPosition {
@@ -20,28 +24,45 @@ export interface WindowConfig {
   clickThrough?: boolean    // Ignore mouse events (for overlays)
 }
 
-// Window manifest (window.json schema)
-export interface WindowManifest {
-  id: string                // Unique identifier
-  name: string              // Display name
-  version: string           // Semantic version
+// ============================================
+// Global Config Types
+// ============================================
 
-  type: 'bar' | 'floating'  // Window type
-
-  position: WindowPosition
-  window?: WindowConfig
-
-  entry: string             // Entry point (default: 'index.html')
-  devUrl?: string           // Development server URL
+// Theme configuration
+export interface ThemeConfig {
+  mode: 'light' | 'dark' | 'system'
+  accentColor?: string
 }
 
-// Window instance (loaded window)
-export interface WindowInstance {
-  windowId: string          // References WindowManifest.id
-  instanceId: string        // Unique instance ID (for duplicates)
-  enabled: boolean
-  overrides?: Partial<WindowPosition>
+// Global settings
+export interface GlobalSettings {
+  hotReload: boolean
+  devMode: boolean
 }
+
+// Secrets configuration
+export interface SecretsConfig {
+  github?: { token: string }
+}
+
+// UI configuration for loading user-built frontends
+export interface UiConfig {
+  /** Custom path to UI dist folder (supports ~ expansion) */
+  distPath?: string
+}
+
+// Global Arcana configuration (arcana.json schema)
+export interface ArcanaConfig {
+  version: number           // Schema version (2)
+  theme: ThemeConfig
+  settings: GlobalSettings
+  secrets?: SecretsConfig
+  ui?: UiConfig
+}
+
+// ============================================
+// Monitor Types
+// ============================================
 
 // Monitor information
 export interface MonitorInfo {
@@ -51,51 +72,6 @@ export interface MonitorInfo {
   x: number
   y: number
   scaleFactor: number
-}
-
-// Configuration types
-export interface BarConfig {
-  position: 'top' | 'bottom'
-  height: number
-  opacity: number
-}
-
-export interface WidgetConfig {
-  enabled: boolean
-  [key: string]: unknown
-}
-
-export interface GitHubConfig {
-  token?: string
-}
-
-export interface AppConfig {
-  bar: BarConfig
-  widgets: {
-    workspaces: WidgetConfig
-    clock: WidgetConfig & { format?: string }
-    battery: WidgetConfig
-    cpu: WidgetConfig
-    memory: WidgetConfig
-    network: WidgetConfig
-  }
-  theme: {
-    mode: 'light' | 'dark' | 'system'
-  }
-  github?: GitHubConfig
-}
-
-// Global Arcana configuration
-export interface ArcanaConfig {
-  windows: WindowInstance[]
-  settings: {
-    hotReload: boolean
-    devMode: boolean
-  }
-  theme: {
-    mode: 'light' | 'dark' | 'system'
-    accentColor?: string
-  }
 }
 
 // ============================================

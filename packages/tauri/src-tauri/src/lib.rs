@@ -7,19 +7,16 @@ mod windows;
 use clap::{Parser, Subcommand};
 use commands::{
     aerospace_focus_workspace, aerospace_get_focused_workspace, aerospace_get_workspaces,
-    build_all_widgets, build_widget, clear_icon_cache, close_all_popovers, close_popover,
-    execute_shell, get_active_app_info, get_app_icon, get_app_icons, get_battery_info,
-    get_bluetooth_info, get_brightness_info, get_config, get_cpu_info, get_disk_info,
-    get_media_info, get_memory_info, get_monitors, get_network_info, get_open_popovers,
-    get_volume_info, media_next, media_pause, media_play, media_previous, open_popover,
-    save_config, set_brightness, set_mute, set_volume, set_window_geometry, set_window_position,
-    set_window_size, store_delete, store_get, store_keys, store_set, toggle_bluetooth,
-    toggle_mute, widget_needs_build,
+    clear_icon_cache, close_all_popovers, close_popover, execute_shell, get_active_app_info,
+    get_app_icon, get_app_icons, get_battery_info, get_bluetooth_info, get_brightness_info,
+    get_config, get_cpu_info, get_disk_info, get_media_info, get_memory_info, get_monitors,
+    get_network_info, get_open_popovers, get_volume_info, media_next, media_pause, media_play,
+    media_previous, open_popover, save_config, set_brightness, set_mute, set_volume,
+    set_window_geometry, set_window_position, set_window_size, store_delete, store_get,
+    store_keys, store_set, toggle_bluetooth, toggle_mute,
 };
 use windows::{
-    close_window, create_inline_window, create_window,
-    discover_windows, get_window_manifest, get_windows, get_windows_dir,
-    hide_window, show_window, update_window_position,
+    close_window, create_inline_window, hide_window, show_window, update_window_position,
 };
 use once_cell::sync::OnceCell;
 use std::path::PathBuf;
@@ -48,45 +45,10 @@ pub enum Commands {
         /// Previous workspace ID (optional)
         prev: Option<String>,
     },
-    /// Widget management commands
-    Widget {
-        #[command(subcommand)]
-        action: WidgetCommands,
-    },
-}
-
-#[derive(Subcommand)]
-pub enum WidgetCommands {
-    /// Create a new widget from template
-    Create {
-        /// Widget name (will be used as directory name)
-        name: String,
-        /// Template to use (vue-basic, html-basic)
-        #[arg(short, long, default_value = "vue-basic")]
-        template: String,
-    },
-    /// Build a widget manually
-    Build {
-        /// Widget ID to build (or "all" to build all)
-        widget_id: String,
-    },
-    /// List all widgets
-    List,
 }
 
 // Global AppHandle for emitting events from native callbacks
 static GLOBAL_APP_HANDLE: OnceCell<tauri::AppHandle> = OnceCell::new();
-
-fn get_user_config_dir() -> Option<PathBuf> {
-    // Use XDG-style config directory for consistency
-    dirs::home_dir().map(|home| home.join(".config/arcana/dist"))
-}
-
-fn has_user_config() -> bool {
-    get_user_config_dir()
-        .map(|d| d.join("index.html").exists())
-        .unwrap_or(false)
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -103,13 +65,6 @@ pub fn run() {
                 };
                 ipc::send_command(&cmd)
             }
-            Commands::Widget { action } => match action {
-                WidgetCommands::Create { name, template } => {
-                    cli::widget::create_widget(&name, &template)
-                }
-                WidgetCommands::Build { widget_id } => cli::widget::build_widget(&widget_id),
-                WidgetCommands::List => cli::widget::list_widgets(),
-            },
         };
         std::process::exit(if success { 0 } else { 1 });
     }
@@ -164,17 +119,12 @@ pub fn run() {
             // Bluetooth commands
             get_bluetooth_info,
             toggle_bluetooth,
-            // Window commands
-            discover_windows,
-            get_window_manifest,
-            create_window,
-            close_window,
-            get_windows,
-            show_window,
             // Inline window commands
             create_inline_window,
             update_window_position,
             hide_window,
+            close_window,
+            show_window,
             // Popover commands
             open_popover,
             close_popover,
@@ -187,19 +137,14 @@ pub fn run() {
             store_keys,
             // Shell commands
             execute_shell,
-            // Builder commands
-            build_widget,
-            build_all_widgets,
-            widget_needs_build,
         ])
         .register_uri_scheme_protocol("arcana", |ctx, request| {
             // Combine host and path for routing
-            // arcana://window/test-widget/index.html -> host="window", path="/test-widget/index.html"
-            // We need full path: /window/test-widget/index.html
+            // arcana://localhost/index.html -> host="localhost", path="/index.html"
             let uri = request.uri();
             let host = uri.host().unwrap_or("");
             let uri_path = uri.path();
-            let path = if host.is_empty() {
+            let path = if host.is_empty() || host == "localhost" {
                 uri_path.to_string()
             } else {
                 format!("/{}{}", host, uri_path)
@@ -211,19 +156,6 @@ pub fn run() {
             };
             let path = path.as_str();
 
-            // Importmap for widget runtime libraries
-            const IMPORTMAP: &str = r#"<script type="importmap">
-{
-  "imports": {
-    "@arcana/providers": "arcana://lib/providers.js",
-    "@tauri-apps/api/core": "arcana://lib/tauri-api.js",
-    "@tauri-apps/api/event": "arcana://lib/tauri-api.js",
-    "vue": "arcana://lib/vue.esm.js"
-  }
-}
-</script>
-"#;
-
             // Helper: get MIME type for file
             let get_mime = |path: &PathBuf| -> &'static str {
                 match path.extension().and_then(|e| e.to_str()) {
@@ -232,9 +164,14 @@ pub fn run() {
                     Some("css") => "text/css",
                     Some("json") => "application/json",
                     Some("png") => "image/png",
+                    Some("jpg") | Some("jpeg") => "image/jpeg",
+                    Some("gif") => "image/gif",
                     Some("svg") => "image/svg+xml",
+                    Some("ico") => "image/x-icon",
                     Some("woff") => "font/woff",
                     Some("woff2") => "font/woff2",
+                    Some("ttf") => "font/ttf",
+                    Some("otf") => "font/otf",
                     _ => "application/octet-stream",
                 }
             };
@@ -257,34 +194,79 @@ pub fn run() {
                 }
             };
 
-            // Helper: serve HTML with importmap injection for widgets
-            let serve_widget_html = |file_path: &PathBuf| -> Response<Vec<u8>> {
-                if file_path.exists() {
-                    match std::fs::read_to_string(file_path) {
-                        Ok(mut content) => {
-                            // Inject importmap if not already present
-                            if !content.contains("type=\"importmap\"") {
-                                // Try to inject after <head>, fallback to start of file
-                                if let Some(pos) = content.find("<head>") {
-                                    content.insert_str(pos + 6, IMPORTMAP);
-                                } else if let Some(pos) = content.find("<HEAD>") {
-                                    content.insert_str(pos + 6, IMPORTMAP);
-                                } else {
-                                    // Prepend if no <head> tag found
-                                    content = format!("{}{}", IMPORTMAP, content);
-                                }
-                            }
-                            Response::builder()
-                                .header("Content-Type", "text/html")
-                                .header("Access-Control-Allow-Origin", "*")
-                                .body(content.into_bytes())
-                                .unwrap()
-                        }
-                        Err(_) => Response::builder().status(404).body(Vec::new()).unwrap(),
-                    }
-                } else {
-                    Response::builder().status(404).body(Vec::new()).unwrap()
-                }
+            // Helper: create error response when UI is not found
+            let ui_not_found_response = || -> Response<Vec<u8>> {
+                let config_dir = commands::config::get_config_dir();
+                let default_dist = config_dir.join("dist");
+                let html = format!(
+                    r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Arcana - UI Not Found</title>
+    <style>
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 40px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }}
+        h1 {{ color: #ff6b6b; margin-bottom: 20px; }}
+        h2 {{ color: #4ecdc4; margin-top: 30px; }}
+        code {{
+            background: #2d2d2d;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+        }}
+        pre {{
+            background: #2d2d2d;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }}
+        ol {{ padding-left: 24px; }}
+        li {{ margin: 8px 0; }}
+    </style>
+</head>
+<body>
+    <h1>Arcana UI Not Found</h1>
+    <p>No user interface distribution was found. Arcana requires a built UI to display.</p>
+
+    <h2>Setup Options</h2>
+
+    <h3>Option 1: Default Location</h3>
+    <p>Place your built UI in:</p>
+    <pre><code>{}</code></pre>
+
+    <h3>Option 2: Custom Path</h3>
+    <p>Set <code>ui.distPath</code> in <code>~/.config/arcana/arcana.json</code>:</p>
+    <pre><code>{{
+  "version": 2,
+  "ui": {{
+    "distPath": "~/path/to/your/dist"
+  }}
+}}</code></pre>
+
+    <h2>Quick Start</h2>
+    <ol>
+        <li>Clone the starter: <code>git clone https://github.com/.../arcana-starter-vue</code></li>
+        <li>Install dependencies: <code>npm install</code></li>
+        <li>Build: <code>npm run build</code></li>
+        <li>Link: <code>ln -s $(pwd)/dist {}</code></li>
+        <li>Restart Arcana</li>
+    </ol>
+</body>
+</html>"#,
+                    default_dist.display(),
+                    default_dist.display()
+                );
+                Response::builder()
+                    .status(503)
+                    .header("Content-Type", "text/html; charset=utf-8")
+                    .body(html.into_bytes())
+                    .unwrap()
             };
 
             // Route: /lib/{file} - Serve shared libraries for widget runtime
@@ -311,41 +293,31 @@ pub fn run() {
                 return Response::builder().status(404).body(Vec::new()).unwrap();
             }
 
-            // Route: /window/{window_id}/{file_path} - Serve widget files
-            if path.starts_with("/window/") {
-                let parts: Vec<&str> = path[8..].splitn(2, '/').collect();
-                if !parts.is_empty() {
-                    let window_id = parts[0];
-                    let file = if parts.len() >= 2 { parts[1] } else { "index.html" };
-                    if let Ok(windows_dir) = get_windows_dir() {
-                        let widget_dir = windows_dir.join(window_id);
+            // Route: User UI - Serve from user's dist folder
+            // Priority: 1. config ui.distPath, 2. ~/.config/arcana/dist/
+            let ui_dist = match commands::config::get_ui_dist_path() {
+                Some(path) => path,
+                None => return ui_not_found_response(),
+            };
 
-                        // Check .arcana/ directory first (built files)
-                        let arcana_path = widget_dir.join(".arcana").join(file);
-                        if arcana_path.exists() {
-                            // Inject importmap for HTML files
-                            if file.ends_with(".html") || file == "index.html" {
-                                return serve_widget_html(&arcana_path);
-                            }
-                            return serve_file(&arcana_path);
-                        }
+            // Determine file to serve
+            let file_path = if path == "/index.html" {
+                ui_dist.join("index.html")
+            } else {
+                // Remove leading slash and serve from dist
+                let relative = path.trim_start_matches('/');
+                ui_dist.join(relative)
+            };
 
-                        // Fall back to source directory
-                        let file_path = widget_dir.join(file);
-                        // Inject importmap for HTML files in widget directories
-                        if file.ends_with(".html") || file == "index.html" {
-                            return serve_widget_html(&file_path);
-                        }
-                        return serve_file(&file_path);
-                    }
-                }
-                return Response::builder().status(404).body(Vec::new()).unwrap();
+            // Try to serve the file
+            if file_path.exists() {
+                return serve_file(&file_path);
             }
 
-            // Legacy: serve from ~/.config/arcana/dist/
-            if has_user_config() {
-                let file_path = get_user_config_dir().unwrap().join(&path[1..]);
-                return serve_file(&file_path);
+            // SPA fallback: serve index.html for non-existent paths (Vue Router support)
+            let index_path = ui_dist.join("index.html");
+            if index_path.exists() {
+                return serve_file(&index_path);
             }
 
             Response::builder().status(404).body(Vec::new()).unwrap()
@@ -461,14 +433,6 @@ pub fn run() {
             }
 
             // Window position/size is now controlled by useArcanaInit in the frontend
-
-            // Navigate to custom protocol if user config exists (only in release mode)
-            // In dev mode, Tauri uses devUrl from tauri.conf.json
-            #[cfg(not(debug_assertions))]
-            if has_user_config() {
-                let window = app.get_webview_window("main").unwrap();
-                let _ = window.navigate("arcana://localhost/".parse().unwrap());
-            }
 
             Ok(())
         })

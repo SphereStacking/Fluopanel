@@ -1,30 +1,21 @@
 import { ref, readonly } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import type { AppConfig } from '@arcana/core'
+import type { ArcanaConfig } from '@arcana/core'
 
-const defaultConfig: AppConfig = {
-  bar: {
-    position: 'top',
-    height: 32,
-    opacity: 0.9,
-  },
-  widgets: {
-    workspaces: { enabled: true },
-    clock: { enabled: true, format: 'HH:mm' },
-    battery: { enabled: true },
-    cpu: { enabled: true },
-    memory: { enabled: true },
-    network: { enabled: true },
-  },
+const defaultConfig: ArcanaConfig = {
+  version: 2,
   theme: {
     mode: 'system',
+    accentColor: '#007AFF',
   },
-  github: {
-    token: undefined,
+  settings: {
+    hotReload: true,
+    devMode: false,
   },
+  secrets: undefined,
 }
 
-const config = ref<AppConfig>(defaultConfig)
+const config = ref<ArcanaConfig>(defaultConfig)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
@@ -33,7 +24,7 @@ export function useConfig() {
     isLoading.value = true
     error.value = null
     try {
-      const loaded = await invoke<AppConfig>('get_config')
+      const loaded = await invoke<ArcanaConfig>('get_config')
       config.value = { ...defaultConfig, ...loaded }
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e)
@@ -43,7 +34,7 @@ export function useConfig() {
     }
   }
 
-  const saveConfig = async (newConfig: Partial<AppConfig>) => {
+  const saveConfig = async (newConfig: Partial<ArcanaConfig>) => {
     const merged = { ...config.value, ...newConfig }
     try {
       await invoke('save_config', { config: merged })
@@ -55,27 +46,21 @@ export function useConfig() {
     }
   }
 
-  const updateBarPosition = async (position: 'top' | 'bottom') => {
+  const updateThemeMode = async (mode: 'light' | 'dark' | 'system') => {
     await saveConfig({
-      bar: { ...config.value.bar, position },
+      theme: { ...config.value.theme, mode },
     })
   }
 
-  const updateBarHeight = async (height: number) => {
+  const updateAccentColor = async (accentColor: string) => {
     await saveConfig({
-      bar: { ...config.value.bar, height },
+      theme: { ...config.value.theme, accentColor },
     })
   }
 
-  const toggleWidget = async (
-    widget: keyof AppConfig['widgets'],
-    enabled: boolean
-  ) => {
+  const setGitHubToken = async (token: string | undefined) => {
     await saveConfig({
-      widgets: {
-        ...config.value.widgets,
-        [widget]: { ...config.value.widgets[widget], enabled },
-      },
+      secrets: token ? { github: { token } } : undefined,
     })
   }
 
@@ -85,8 +70,8 @@ export function useConfig() {
     error: readonly(error),
     loadConfig,
     saveConfig,
-    updateBarPosition,
-    updateBarHeight,
-    toggleWidget,
+    updateThemeMode,
+    updateAccentColor,
+    setGitHubToken,
   }
 }

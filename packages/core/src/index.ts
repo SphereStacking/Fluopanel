@@ -1,5 +1,4 @@
 export * from './types'
-export * from './window-manager'
 export * from './window-controller'
 export * from './window'
 export * from './popover-controller'

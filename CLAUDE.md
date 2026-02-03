@@ -21,9 +21,7 @@ Arcana は Tauri 2 (Rust バックエンド) で構築された macOS 用カス�
 ### アーキテクチャ層
 ```
 ┌─────────────────────────────────────┐
-│  User Widgets (Vue/React/HTML)      │  ← ユーザー定義ウィジェット
-├─────────────────────────────────────┤
-│  Starters (Vue)                     │  ← フレームワーク固有実装
+│  Starters (Vue)                     │  ← App.vue でウィジェットを定義
 ├─────────────────────────────────────┤
 │  @arcana/vue                        │  ← Vue コンポーネント・composables
 ├─────────────────────────────────────┤
@@ -70,7 +68,7 @@ packages/
 ├── tauri/             # Tauri デスクトップアプリ (Rust)
 │   └── src-tauri/src/
 │       ├── commands/  # Tauri IPC コマンド (aerospace, system, icons, config, popover)
-│       ├── windows/   # ウィンドウ管理 (manager.rs, discovery.rs)
+│       ├── windows/   # ウィンドウ管理 (manager.rs)
 │       ├── ipc/       # Unix ソケット IPC
 │       └── lib.rs     # エントリーポイント
 └── starters/
@@ -99,17 +97,14 @@ packages/
 </template>
 ```
 
-### ユーザーウィジェット構造
+### 設定ファイル
 
 ```
 ~/.config/arcana/
-├── config.json           # グローバル設定
-└── widgets/              # ユーザー定義ウィジェット
-    └── my-widget/
-        ├── widget.json   # ウィジェットマニフェスト
-        ├── index.html    # エントリーポイント
-        └── dist/         # ビルド済みアセット
+└── arcana.json           # グローバル設定
 ```
+
+ウィジェットは `App.vue` 内で `<Window>` コンポーネントとして定義します。
 
 ### パッケージ依存関係
 
@@ -137,7 +132,6 @@ interface Provider<T> {
 |------|---------|
 | 公式パッケージ | `@arcana/{name}` |
 | サードパーティプロバイダー | `arcana-provider-{name}` |
-| サードパーティウィジェット | `arcana-widget-{name}` |
 
 ### IPC レイヤー
 
@@ -162,9 +156,7 @@ arcana emit workspace-changed   # ワークスペース変更通知
 
 ### カスタムプロトコル
 
-アプリは `arcana://` プロトコルを使用して以下を配信:
-1. `~/.config/arcana/dist/` からのユーザー設定（存在する場合）
-2. フォールバックとしてバンドルされたアセット
+`arcana://lib/` プロトコルで共有ライブラリ（Vue, Tauri API）を配信します。
 
 ### ウィンドウ動作
 
